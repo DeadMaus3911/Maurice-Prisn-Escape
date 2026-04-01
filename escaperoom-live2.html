@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Maurice Prisn Escape</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Contrail+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a0533;
+  --grad1:#2d0b5e;
+  --grad2:#0d1b6e;
+  --s1:rgba(255,255,255,.08);
+  --s2:rgba(255,255,255,.05);
+  --orange:#ff6b35;
+  --pink:#ff3d9a;
+  --gold:#ffd60a;
+  --cyan:#00d4ff;
+  --green:#00e676;
+  --purple:#c77dff;
+  --text:#ffffff;
+  --muted:rgba(255,255,255,.75);
+  --r:20px;
+  --sans:'Nunito',sans-serif;
+  --display:'Contrail One',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:linear-gradient(145deg,var(--grad1) 0%,var(--bg) 40%,var(--grad2) 100%);color:var(--text);font-family:var(--sans);overflow-x:hidden;min-height:100dvh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(199,125,255,.15) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(0,212,255,.1) 0%,transparent 50%);pointer-events:none;z-index:0}
+.screen{display:none;min-height:100dvh;flex-direction:column;animation:fadeUp .35s ease;position:relative;z-index:1}
+.screen.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.pad{padding:24px}
+.game-title{font-family:var(--display);font-size:40px;text-align:center;line-height:1.15;text-transform:uppercase;background:linear-gradient(135deg,#fff 0%,var(--purple) 50%,var(--cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-top:8px;letter-spacing:2px}
+.title{font-family:var(--display);font-size:30px;font-weight:400;line-height:1.2;letter-spacing:1px}
+.grad{background:linear-gradient(135deg,var(--orange),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sub{font-size:13px;color:var(--muted);letter-spacing:3px;margin-top:6px;text-transform:uppercase;text-align:center}
+.card{background:rgba(255,255,255,.08);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:var(--r);padding:20px;margin-top:14px}
+.card-cyan{border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.08)}
+.card-gold{border-color:rgba(255,214,10,.4);background:rgba(255,214,10,.06)}
+.card-orange{border-color:rgba(255,107,53,.4);background:rgba(255,107,53,.08)}
+.card-purple{border-color:rgba(199,125,255,.4);background:rgba(199,125,255,.08)}
+.lbl{display:block;font-size:11px;font-weight:800;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:14px 0 7px}
+.lbl:first-child{margin-top:0}
+input,textarea{width:100%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:14px;padding:14px 16px;color:var(--text);font-family:var(--sans);font-size:16px;font-weight:600;outline:none;transition:.2s}
+input::placeholder,textarea::placeholder{color:rgba(255,255,255,.4)}
+input:focus,textarea:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,212,255,.15);background:rgba(255,255,255,.13)}
+textarea{min-height:90px;resize:none;line-height:1.5}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border:none;border-radius:16px;font-family:var(--sans);font-size:17px;font-weight:800;cursor:pointer;transition:all .18s;margin-top:12px;letter-spacing:.3px}
+.btn:active{transform:scale(.96)}
+.btn-red{background:linear-gradient(135deg,var(--orange),var(--pink));color:#fff;box-shadow:0 6px 24px rgba(255,61,154,.35)}
+.btn-cyan{background:linear-gradient(135deg,var(--cyan),#0077cc);color:#fff;box-shadow:0 6px 24px rgba(0,212,255,.3)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#ff9500);color:#000;box-shadow:0 6px 24px rgba(255,214,10,.35)}
+.btn-green{background:linear-gradient(135deg,var(--green),#00a854);color:#000;box-shadow:0 6px 24px rgba(0,230,118,.3)}
+.btn-ghost{background:rgba(255,255,255,.08);color:var(--text);border:1.5px solid rgba(255,255,255,.15)}
+.btn-purple{background:linear-gradient(135deg,var(--purple),#7b2ff7);color:#fff;box-shadow:0 6px 24px rgba(199,125,255,.35)}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:100px;padding:5px 14px;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
+.b-red{background:rgba(255,107,53,.2);color:var(--orange);border:1px solid rgba(255,107,53,.4)}
+.b-cyan{background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.35)}
+.b-gold{background:rgba(255,214,10,.15);color:var(--gold);border:1px solid rgba(255,214,10,.35)}
+.b-green{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.35)}
+.b-purple{background:rgba(199,125,255,.15);color:var(--purple);border:1px solid rgba(199,125,255,.35)}
+.code-box{background:rgba(0,212,255,.1);border:2px solid rgba(0,212,255,.4);border-radius:18px;padding:20px;text-align:center;margin:14px 0;box-shadow:0 0 40px rgba(0,212,255,.1)}
+.code-lbl{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.code-val{font-family:var(--display);font-size:46px;letter-spacing:10px;color:var(--cyan);text-shadow:0 0 20px rgba(0,212,255,.5)}
+.p-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.p-chip{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;animation:fadeUp .3s ease}
+.p-chip.rdy{border-color:var(--green);background:rgba(0,230,118,.1)}
+.av{font-size:24px}
+.timer-strip{position:sticky;top:0;z-index:100;background:rgba(26,5,51,.9);backdrop-filter:blur(20px);padding:14px 20px 10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.timer-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.t-num{font-family:var(--display);font-size:26px;color:var(--gold);transition:color .3s}
+.t-num.red{color:var(--orange);animation:tp .6s infinite}
+@keyframes tp{0%,100%{opacity:1}50%{opacity:.5}}
+.t-lbl{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.prog-bar{height:6px;background:rgba(255,255,255,.1);border-radius:100px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--orange));border-radius:100px;transition:width 1s linear}
+.dots-row{display:flex;gap:6px;padding:12px 20px 0}
+.dot{width:8px;height:8px;border-radius:100px;background:rgba(255,255,255,.15);transition:all .3s}
+.dot.done{background:var(--green);width:20px}
+.dot.cur{background:var(--gold);animation:dp .8s infinite alternate}
+@keyframes dp{from{opacity:1}to{opacity:.4}}
+.puz-area{padding:20px}
+.pq{font-size:20px;font-weight:800;line-height:1.4;margin-bottom:8px}
+.ph{font-size:14px;color:var(--muted);line-height:1.6;font-weight:600}
+.ans-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.ans{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.12);border-radius:16px;padding:18px 12px;text-align:center;font-size:15px;font-weight:700;cursor:pointer;transition:all .18s;min-height:64px;display:flex;align-items:center;justify-content:center;line-height:1.3}
+.ans:active{transform:scale(.94)}
+.ans.sel{border-color:var(--cyan);background:rgba(0,212,255,.15);color:var(--cyan)}
+.ans.ok{border-color:var(--green);background:rgba(0,230,118,.15);color:var(--green);animation:pop .35s ease}
+.ans.fail{border-color:var(--orange);background:rgba(255,107,53,.12);color:var(--orange);animation:shake .4s ease}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.07)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-6px)}50%{transform:translateX(6px)}}
+.cc-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.cc{background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.3);border-radius:100px;padding:7px 16px;font-size:14px;font-weight:700;color:var(--cyan);animation:fadeUp .3s ease}
+.ce{background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.15);border-radius:100px;padding:7px 20px;font-size:14px;color:var(--muted)}
+.lb-row{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px 16px;margin-bottom:8px;animation:fadeUp .3s ease}
+.lb-rank{font-size:20px;width:28px;text-align:center}
+.lb-name{flex:1;font-weight:700;font-size:16px}
+.lb-pts{font-size:18px;font-weight:800;color:var(--gold)}
+.me-t{font-size:11px;color:var(--cyan);font-weight:600}
+.wd-wrap{display:flex;gap:8px;justify-content:center;margin:24px 0}
+.wd{width:11px;height:11px;border-radius:50%;background:var(--cyan);animation:wd 1.2s ease infinite}
+.wd:nth-child(2){animation-delay:.2s}.wd:nth-child(3){animation-delay:.4s}
+@keyframes wd{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-14px);opacity:1}}
+.victory-wrap{text-align:center;padding:40px 24px 60px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.trophy{font-size:96px;animation:tf 2s ease-in-out infinite alternate;display:block;margin-bottom:8px}
+@keyframes tf{from{transform:translateY(0) rotate(-4deg);filter:drop-shadow(0 0 16px var(--gold))}to{transform:translateY(-16px) rotate(4deg);filter:drop-shadow(0 0 36px var(--gold))}}
+.v-title{font-family:var(--display);font-size:36px;letter-spacing:2px;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:10px 0}
+.pm-box{background:rgba(255,214,10,.08);border:2px solid rgba(255,214,10,.4);border-radius:var(--r);padding:24px;margin-top:20px;text-align:left;box-shadow:0 0 40px rgba(255,214,10,.1);width:100%}
+.pm-lbl{font-size:11px;font-weight:800;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+.pm-txt{font-size:17px;line-height:1.75;color:var(--text);white-space:pre-wrap;font-weight:500}
+.lock-hero{font-size:72px;text-align:center;display:block;padding:32px 0 4px;animation:lg 2s ease infinite alternate}
+@keyframes lg{from{filter:drop-shadow(0 0 10px var(--orange))}to{filter:drop-shadow(0 0 36px var(--pink))}}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(26,5,51,.95);backdrop-filter:blur(20px);border:1.5px solid rgba(255,255,255,.2);border-radius:100px;padding:13px 26px;font-size:15px;font-weight:700;z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;max-width:88vw;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--green);color:var(--green)}
+#toast.err{border-color:var(--orange);color:var(--orange)}
+#toast.info{border-color:var(--cyan);color:var(--cyan)}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:9997}
+.small{font-size:15px;color:var(--muted);line-height:1.6;font-weight:600}
+.row{display:flex;align-items:center;justify-content:space-between}
+.q-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;margin-bottom:8px}
+.pm-row{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;margin-bottom:8px}
+.pm-name{font-weight:800;font-size:15px;margin-bottom:8px;color:var(--gold)}
+.av-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.av-pick button{font-size:28px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.12);border-radius:12px;padding:8px;cursor:pointer;transition:all .18s}
+.av-pick button.sel{border-color:var(--cyan);background:rgba(0,212,255,.15);transform:scale(1.1)}
+.paw-deco{position:absolute;font-size:120px;opacity:.04;pointer-events:none;user-select:none}
+@keyframes solvedFlash{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div id="toast"></div>
+
+<!-- LANDING -->
+<div class="screen active" id="s-land">
+<span class="paw-deco" style="top:-20px;right:-30px">🐾</span>
+<span class="paw-deco" style="bottom:40px;left:-20px;transform:rotate(30deg)">🐾</span>
+<div class="pad">
+  <span class="lock-hero">🐾🔐🐾</span>
+  <div class="game-title">Maurice<br>Prisn Escape</div>
+  <div class="sub">Een afscheidsritueel</div>
+  <div class="card" style="margin-top:24px">
+    <div class="lbl">Jouw naam</div>
+    <input id="inp-name" type="text" placeholder="Typ je naam..." maxlength="20" autocomplete="off">
+    <div class="lbl">Kies je dier</div>
+    <div class="av-pick" id="av-pick"></div>
+    <input id="inp-av" type="hidden" value="🦊">
+  </div>
+  <div class="card card-cyan">
+    <div class="lbl">Spelcode</div>
+    <input id="inp-room" type="text" placeholder="MAUS" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:6px;font-size:22px;font-weight:800;text-align:center">
+  </div>
+  <button class="btn btn-red" onclick="joinGame()" style="margin-top:20px;font-size:18px;padding:18px">🚀 Doe mee!</button>
+  <button class="btn btn-ghost" onclick="showScreen('s-admin')" style="margin-top:8px;font-size:13px;opacity:.4">⚙️ Host / Admin</button>
+</div>
+</div>
+
+<!-- LOBBY -->
+<div class="screen" id="s-lobby">
+<div class="pad">
+  <div class="badge b-cyan">⏳ Lobby</div>
+  <div class="title">Wachten op<br><span class="grad">iedereen...</span></div>
+  <p class="small" style="margin-top:8px">Host start zodra iedereen aanwezig is.</p>
+  <div class="code-box">
+    <div class="code-lbl">Spelcode</div>
+    <div class="code-val" id="lby-code">--</div>
+  </div>
+  <div class="row" style="margin-top:18px">
+    <div class="small">Deelnemers</div>
+    <div id="lby-count" class="badge b-gold">0</div>
+  </div>
+  <div class="p-grid" id="lby-players"></div>
+  <div class="wd-wrap"><div class="wd"></div><div class="wd"></div><div class="wd"></div></div>
+  <p class="small" style="text-align:center">Host start het spel als iedereen er is</p>
+</div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="s-game">
+  <div class="timer-strip">
+    <div class="timer-row">
+      <div><div class="t-lbl">Resterende tijd</div><div class="t-num" id="t-disp">30:00</div></div>
+      <div style="text-align:right"><div class="t-lbl">Jouw score</div><div class="t-num" style="color:var(--cyan)" id="my-score">0</div></div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="t-fill" style="width:100%"></div></div>
+  </div>
+  <div class="dots-row" id="puz-dots"></div>
+  <div class="puz-area" id="puz-area"></div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="screen" id="s-board">
+<div class="pad">
+  <div class="badge b-gold">🏆 Tussenstand</div>
+  <div class="title" style="margin-bottom:16px">Stand van<br><span class="grad">zaken</span></div>
+  <div id="board-list"></div>
+  <div class="wd-wrap"><div class="wd"></div><div class="wd"></div><div class="wd"></div></div>
+  <p class="small" style="text-align:center">Volgende ronde start automatisch...</p>
+</div>
+</div>
+
+<!-- PUZZLE PIECE -->
+<div class="screen" id="s-piece">
+<div class="pad" style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center">
+  <div class="badge b-purple">🧩 Groepspuzzel</div>
+  <div class="title" style="margin-bottom:16px">Jullie puzzelstukken!<br><span class="grad">Leg ze samen</span></div>
+  <div style="font-size:80px;animation:tf 2s ease-in-out infinite alternate;filter:drop-shadow(0 0 20px var(--purple))">🧩</div>
+  <div class="card" style="width:100%;text-align:left;margin-top:20px">
+    <p style="font-size:16px;line-height:1.65;font-weight:600">Pak je 3D-geprint puzzelstuk. <strong>Leg het samen met de anderen op tafel.</strong> Zeven stukken — bijna compleet. Er ontbreekt nog één...</p>
+  </div>
+  <div class="cc-wrap" id="piece-players" style="margin-top:16px;width:100%;justify-content:center"></div>
+  <p class="small" style="margin-top:16px">Wacht op het <strong>8e stuk</strong> van de host!</p>
+</div>
+</div>
+
+<!-- VICTORY -->
+<div class="screen" id="s-victory">
+<div class="victory-wrap">
+  <span class="trophy">🏆</span>
+  <div class="v-title">ONTSNAPPING<br>GESLAAGD!</div>
+  <p class="small">Jullie hebben alle puzzels opgelost!</p>
+  <div id="no-msg" class="card" style="width:100%;text-align:center;margin-top:20px">
+    <div style="font-size:40px;margin-bottom:10px">💌</div>
+    <p class="small">Er is een persoonlijk bericht voor jou onderweg...<br>Moment nog even.</p>
+    <div class="wd-wrap"><div class="wd"></div><div class="wd"></div><div class="wd"></div></div>
+  </div>
+  <div class="pm-box" id="pm-box" style="display:none">
+    <div class="pm-lbl">🔒 Alleen voor jou</div>
+    <div class="pm-txt" id="pm-txt"></div>
+  </div>
+  <div id="final-scores" style="width:100%;margin-top:24px"></div>
+</div>
+</div>
+
+<!-- ADMIN -->
+<div class="screen" id="s-admin">
+<div class="pad">
+  <div class="badge b-red">⚙️ Admin</div>
+  <div class="title" style="margin-bottom:4px"><span class="grad">Host</span><br>Dashboard</div>
+  <div id="adm-login" class="card">
+    <div class="lbl">Wachtwoord</div>
+    <input id="adm-pw" type="password" placeholder="Admin wachtwoord...">
+    <button class="btn btn-red" onclick="checkPw()">🔓 Inloggen</button>
+  </div>
+  <div id="adm-panel" style="display:none">
+    <div class="card" style="margin-top:20px">
+      <div class="lbl" style="margin-top:0">Spelcode</div>
+      <input id="adm-code" type="text" placeholder="bv. MAUS" maxlength="8" style="text-transform:uppercase;letter-spacing:4px;font-size:20px;font-weight:800;text-align:center">
+      <div class="lbl">Tijdslimiet (minuten)</div>
+      <input id="adm-time" type="number" value="30" min="5" max="60">
+      <button class="btn btn-cyan" onclick="createRoom()">🏠 Ruimte aanmaken</button>
+    </div>
+    <div id="adm-room" style="display:none">
+      <div class="code-box">
+        <div class="code-lbl">Actieve spelcode</div>
+        <div class="code-val" id="adm-code-show">--</div>
+      </div>
+      <div class="row"><div class="small">Spelers in lobby:</div><div id="adm-count" class="badge b-gold">0</div></div>
+      <div class="p-grid" id="adm-players" style="margin-top:8px"></div>
+      <button class="btn btn-green" onclick="startGame()" style="margin-top:16px">▶️ Start het spel</button>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08)">Persoonlijke berichten</div>
+      <p class="small" style="margin-bottom:12px">Schrijf voor elke speler een privébericht. Alleen zichtbaar op hun eigen scherm.</p>
+      <div id="adm-msgs"></div>
+      <button class="btn btn-ghost" onclick="loadMsgs()" style="font-size:13px">🔄 Spelers laden</button>
+      <button class="btn btn-gold" onclick="saveMsgs()">💾 Berichten opslaan</button>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08)">Puzzelvragen bewerken</div>
+      <div id="adm-qs"></div>
+      <button class="btn btn-ghost" onclick="renderQs()" style="font-size:13px">↺ Reset vragen</button>
+      <button class="btn btn-cyan" onclick="saveQs()">💾 Vragen opslaan</button>
+    </div>
+    <div class="card card-gold" style="margin-top:16px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:12px">Het 8e puzzelstuk — Climax</div>
+      <p style="font-size:15px;line-height:1.6;margin-bottom:14px;font-weight:600">Leg het <strong>8e stuk</strong> fysiek op de puzzel. Tik dan hieronder — alle persoonlijke berichten verschijnen tegelijkertijd op elk scherm.</p>
+      <button class="btn btn-gold" onclick="finalize()">🧩 Finaliseer — Onthul berichten!</button>
+    </div>
+    <button class="btn btn-ghost" onclick="showScreen('s-land')" style="margin-top:8px;font-size:13px;opacity:.4">← Terug</button>
+  </div>
+</div>
+</div>
+
+<script>
+const SB_URL = 'https://kcpxquaodyruodylcekt.supabase.co';
+const SB_KEY = 'sb_publishable_i71uqJLJVP2SQ-AXrKldDw_XyDAMgE3';
+const ADMIN_PW = 'afscheid2026';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+let G = {
+  name:'',avatar:'🦊',playerId:null,
+  roomId:null,roomCode:'',
+  puzIdx:0,myScore:0,
+  timerSec:1800,totalSec:1800,
+  answered:false,started:false,
+  timerInt:null,ch:null,
+};
+
+let PZ = [
+  {id:1,type:'solo',badge:'SOLO',bc:'b-red',
+   q:'Welk jaar begon [NAAM] bij het bedrijf?',
+   h:'Denk aan het eerste kantoorfeestje...',
+   opts:['2018','2019','2020','2021'],ans:0,pts:100},
+  {id:2,type:'solo',badge:'SOLO',bc:'b-red',
+   q:'Wat is het lievelingsdrankje van [NAAM] op het werk?',
+   h:'Je hebt het vast honderden keren zien staan...',
+   opts:['Cappuccino','Zwarte koffie','Latte macchiato','Thee (geen koffie!)'],ans:2,pts:100},
+  {id:3,type:'group',badge:'GROEP',bc:'b-cyan',
+   q:'Groepsopdracht: Noem elk één woord dat [NAAM] het beste omschrijft.',
+   h:'Typ jouw woord. Alle woorden worden zichtbaar voor de groep.',
+   pts:150},
+  {id:4,type:'race',badge:'RACE',bc:'b-gold',
+   q:'RACE! Hoeveel jaar werkte [NAAM] totaal bij dit bedrijf?',
+   h:'Eerste 4 correct = groep gaat door! Snel zijn loont!',
+   opts:['3 jaar','4 jaar','5 jaar','6 jaar'],ans:2,pts:200,raceN:4},
+  {id:5,type:'cipher',badge:'ONTCIJFER',bc:'b-purple',
+   q:'Ontcijfer de geheime boodschap met het sleutelrooster hieronder.',
+   h:'Elk symbool staat voor een letter.',
+   encoded:'★ ★ ♥ ♥ ★♥◆ ♥★★',
+   decoded:'AFSCHEID',pts:250},
+  {id:6,type:'solo',badge:'SOLO',bc:'b-red',
+   q:'Wat gaat [NAAM] doen na dit vertrek?',
+   h:'Jullie hebben er zeker al over gepraat...',
+   opts:['Nieuw bedrijf','Eigen onderneming','Lange reis','Studie'],ans:0,pts:150},
+  {id:7,type:'piece',badge:'GROEPSPUZZEL',bc:'b-purple',
+   q:'De finale! Pak je puzzelstuk en leg het samen met de groep.',
+   h:'Wacht op het 8e stuk...',pts:0},
+];
+
+const AVS = ['🦊','🐻','🐼','🦁','🐯','🦝','🐨','🐸','🦉','🐺','🦄','🐙'];
+
+function initAv(){
+  const w=document.getElementById('av-pick');
+  AVS.forEach((a,i)=>{
+    const b=document.createElement('button');
+    b.textContent=a;b.type='button';
+    if(i===0)b.classList.add('sel');
+    b.onclick=()=>{
+      document.querySelectorAll('.av-pick button').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel');G.avatar=a;
+      document.getElementById('inp-av').value=a;
+    };
+    w.appendChild(b);
+  });
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+let tT;
+function toast(msg,type='info'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`show ${type}`;
+  clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+async function joinGame(){
+  const nm=document.getElementById('inp-name').value.trim();
+  const rm=document.getElementById('inp-room').value.trim().toUpperCase();
+  if(!nm){toast('Vul je naam in!','err');return;}
+  if(!rm||rm.length<3){toast('Vul de spelcode in!','err');return;}
+  G.name=nm;G.avatar=document.getElementById('inp-av').value||'🦊';G.roomCode=rm;
+  const {data:rooms,error}=await sb.from('rooms').select('*').eq('code',rm).limit(1);
+  if(error||!rooms||rooms.length===0){toast('Spelcode niet gevonden!','err');return;}
+  const room=rooms[0];
+  if(room.status==='victory'){toast('Dit spel is al afgelopen!','err');return;}
+  G.roomId=room.id;G.totalSec=(room.time_limit||30)*60;G.timerSec=G.totalSec;
+  const {data:p,error:pe}=await sb.from('players').insert({room_id:room.id,name:nm,avatar:G.avatar,score:0}).select().single();
+  if(pe){toast('Fout: '+pe.message,'err');return;}
+  G.playerId=p.id;
+  document.getElementById('lby-code').textContent=rm;
+  showScreen('s-lobby');
+  subRoom();refreshLobby();
+  if(room.status==='playing'){G.started=true;G.puzIdx=room.current_puzzle||0;startTimer();renderPuz(G.puzIdx);showScreen('s-game');}
+  if(room.status==='piece')showScreen('s-piece');
+  if(room.status==='victory')endGame();
+}
+
+function subRoom(){
+  if(G.ch)sb.removeChannel(G.ch);
+  G.ch=sb.channel(`rm:${G.roomId}`)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:`id=eq.${G.roomId}`},onRoomUpd)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'players',filter:`room_id=eq.${G.roomId}`},refreshLobby)
+    .subscribe();
+  sb.channel(`ans:${G.roomId}`)
+    .on('postgres_changes',{event:'*',schema:'public',table:'answers',filter:`room_id=eq.${G.roomId}`},onNewAns)
+    .subscribe();
+  sb.channel(`pm:${G.playerId}`)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'players',filter:`id=eq.${G.playerId}`},onPlayerUpd)
+    .subscribe();
+}
+
+function onRoomUpd(pl){
+  const r=pl.new;
+  if(r.status==='playing'&&!G.started){G.started=true;G.puzIdx=r.current_puzzle||0;G.timerSec=(r.time_limit||30)*60;G.totalSec=G.timerSec;startTimer();renderPuz(G.puzIdx);showScreen('s-game');}
+  if(r.status==='playing'&&G.started&&r.current_puzzle!==G.puzIdx){G.puzIdx=r.current_puzzle;G.answered=false;renderPuz(G.puzIdx);showScreen('s-game');}
+  if(r.status==='piece'){showScreen('s-piece');refreshPiece();}
+  if(r.status==='victory')endGame();
+}
+
+function onNewAns(){
+  const pz=PZ[G.puzIdx];if(!pz)return;
+  if(pz.type==='group')refreshGroup();
+  if(pz.type==='race')refreshRace();
+  if(pz.type==='piece')refreshPiece();
+}
+
+function onPlayerUpd(pl){
+  const player=pl.new;
+  if(player.personal_message&&document.getElementById('s-victory').classList.contains('active'))showMsg(player.personal_message);
+}
+
+async function refreshLobby(){
+  const {data}=await sb.from('players').select('*').eq('room_id',G.roomId);
+  if(!data)return;
+  const g=document.getElementById('lby-players');
+  if(g){g.innerHTML='';data.forEach(p=>{const c=document.createElement('div');c.className='p-chip rdy';c.innerHTML=`<span class="av">${p.avatar}</span><span>${p.name}</span>`;g.appendChild(c);});}
+  const ct=document.getElementById('lby-count');
+  if(ct)ct.textContent=data.length+' deelnemers';
+}
+
+function startTimer(){
+  clearInterval(G.timerInt);
+  G.timerInt=setInterval(()=>{
+    G.timerSec--;
+    const m=Math.floor(G.timerSec/60),s=G.timerSec%60;
+    const d=document.getElementById('t-disp'),f=document.getElementById('t-fill');
+    if(d){d.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;const urg=G.timerSec<120;d.classList.toggle('red',urg);if(f)f.style.width=(G.timerSec/G.totalSec*100)+'%';}
+    if(G.timerSec<=0){clearInterval(G.timerInt);endGame();}
+  },1000);
+}
+
+function renderPuz(idx){
+  const pz=PZ[idx];if(!pz)return;
+  renderDots(idx);
+  if(pz.type==='piece'){showScreen('s-piece');refreshPiece();return;}
+  const area=document.getElementById('puz-area');
+  let h=`<div class="badge ${pz.bc}">${pz.badge}</div><div class="pq">${pz.q}</div><div class="ph">${pz.h}</div>`;
+  if(pz.type==='solo'||pz.type==='race'){
+    h+=`<div class="ans-grid">`;
+    pz.opts.forEach((o,i)=>{h+=`<div class="ans" data-i="${i}" onclick="pick(${i})">${o}</div>`;});
+    h+=`</div>`;
+    if(pz.type==='race')h+=`<div class="card" style="margin-top:14px;text-align:center"><div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:2px;margin-bottom:4px">RACE VOORTGANG</div><div id="race-n" style="font-size:36px;font-weight:900;color:var(--gold)">0 / ${pz.raceN}</div><div style="font-size:13px;color:var(--muted);margin-top:2px;font-weight:600">spelers correct</div></div>`;
+  }
+  if(pz.type==='group'){
+    h+=`<div style="margin-top:14px"><div class="lbl" style="margin-top:0">Jouw woord</div><input id="g-inp" type="text" placeholder="Typ één woord..." maxlength="20" autocomplete="off"><button class="btn btn-cyan" onclick="submitGroup()" style="margin-top:10px">✅ Insturen</button></div>
+    <div style="margin-top:16px"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Bijdragen van de groep</div><div class="cc-wrap" id="g-contribs"></div></div>`;
+  }
+  if(pz.type==='cipher'){
+    h+=`<div style="margin-top:14px;background:rgba(199,125,255,.1);border:1px solid rgba(199,125,255,.3);border-radius:14px;padding:16px">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:2px;margin-bottom:8px">GECODEERDE BOODSCHAP</div>
+      <div style="font-size:28px;letter-spacing:6px;color:var(--purple);font-weight:700">${pz.encoded}</div></div>
+    <div style="margin-top:14px;background:rgba(255,255,255,.06);border-radius:14px;padding:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:2px;margin-bottom:8px">SLEUTELROOSTER</div>
+      <div style="font-size:12px;line-height:1.9;color:var(--text);font-weight:600">★=A ♥=B ◆=C ♠=D ●=E ▲=F ✦=G ♣=H ✿=I ☾=J ✪=K ♛=L ✩=M<br>⬟=N ◉=O ❖=P ♞=R ✵=S ✤=T ✜=U ✶=V ❋=W ✡=Y ✣=Z</div></div>
+    <div style="margin-top:14px"><div class="lbl" style="margin-top:0">Jouw antwoord</div>
+    <input id="c-inp" type="text" placeholder="Ontcijferd woord..." autocomplete="off" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:800">
+    <button class="btn btn-purple" onclick="submitCipher()">🔓 Ontcijfer</button></div>`;
+  }
+  area.innerHTML=h;
+  if(pz.type==='group')refreshGroup();
+  if(pz.type==='race')refreshRace();
+}
+
+function renderDots(cur){
+  const w=document.getElementById('puz-dots');if(!w)return;
+  w.innerHTML='';
+  PZ.forEach((_,i)=>{const d=document.createElement('div');d.className='dot'+(i<cur?' done':i===cur?' cur':'');w.appendChild(d);});
+}
+
+async function pick(i){
+  if(G.answered)return;
+  const pz=PZ[G.puzIdx];
+  const opts=document.querySelectorAll('.ans');
+  if(opts[i])opts[i].classList.add('sel');
+  const ok=i===pz.ans;G.answered=true;
+  setTimeout(async()=>{
+    opts.forEach((o,j)=>{if(j===pz.ans)o.classList.add('ok');else if(j===i&&!ok)o.classList.add('fail');});
+    let pts=0;
+    if(ok){pts=pz.pts+Math.floor(G.timerSec/10);G.myScore+=pts;document.getElementById('my-score').textContent=G.myScore;toast(`+${pts} punten! 🔥`,'ok');flash();}
+    else toast('Helaas — volgende keer beter!','err');
+    await sb.from('answers').insert({room_id:G.roomId,player_id:G.playerId,puzzle_id:pz.id,answer:String(i),correct:ok,points:pts});
+    await sb.from('players').update({score:G.myScore}).eq('id',G.playerId);
+    if(pz.type==='race'&&ok)refreshRace();
+    setTimeout(()=>showBoard(),1800);
+  },400);
+}
+
+async function submitGroup(){
+  if(G.answered)return;
+  const pz=PZ[G.puzIdx];
+  const v=document.getElementById('g-inp')?.value.trim();
+  if(!v){toast('Type een woord!','err');return;}
+  G.answered=true;
+  await sb.from('answers').insert({room_id:G.roomId,player_id:G.playerId,puzzle_id:pz.id,answer:v,correct:true,points:pz.pts});
+  G.myScore+=pz.pts;document.getElementById('my-score').textContent=G.myScore;
+  toast(`Woord ingediend! +${pz.pts} pts`,'ok');
+  await sb.from('players').update({score:G.myScore}).eq('id',G.playerId);
+  refreshGroup();
+}
+
+async function submitCipher(){
+  if(G.answered)return;
+  const pz=PZ[G.puzIdx];
+  const v=document.getElementById('c-inp')?.value.trim().toUpperCase();
+  const ok=v===pz.decoded.toUpperCase();
+  if(!ok){toast('Niet helemaal... probeer opnieuw','err');return;}
+  G.answered=true;G.myScore+=pz.pts;
+  document.getElementById('my-score').textContent=G.myScore;
+  toast(`Correct! +${pz.pts} pts 🔓`,'ok');flash();
+  await sb.from('answers').insert({room_id:G.roomId,player_id:G.playerId,puzzle_id:pz.id,answer:v,correct:true,points:pz.pts});
+  await sb.from('players').update({score:G.myScore}).eq('id',G.playerId);
+  setTimeout(()=>showBoard(),1600);
+}
+
+async function refreshGroup(){
+  const pz=PZ[G.puzIdx];if(!pz)return;
+  const {data}=await sb.from('answers').select('answer,player_id').eq('room_id',G.roomId).eq('puzzle_id',pz.id);
+  const w=document.getElementById('g-contribs');if(!w||!data)return;
+  w.innerHTML='';
+  data.forEach(a=>{const c=document.createElement('div');c.className='cc';c.textContent=a.answer;w.appendChild(c);});
+  for(let i=data.length;i<7;i++){const s=document.createElement('div');s.className='ce';s.textContent='...';w.appendChild(s);}
+  if(data.length>=7)setTimeout(()=>showBoard(),1200);
+}
+
+async function refreshRace(){
+  const pz=PZ[G.puzIdx];if(!pz)return;
+  const {data}=await sb.from('answers').select('id').eq('room_id',G.roomId).eq('puzzle_id',pz.id).eq('correct',true);
+  const el=document.getElementById('race-n');
+  if(el&&data){el.textContent=`${data.length} / ${pz.raceN}`;if(data.length>=pz.raceN){toast('Drempel gehaald! Groep gaat door 🏁','ok');setTimeout(()=>showBoard(),1200);}}
+}
+
+async function refreshPiece(){
+  const {data}=await sb.from('players').select('*').eq('room_id',G.roomId);
+  const w=document.getElementById('piece-players');if(!w||!data)return;
+  w.innerHTML='';
+  data.forEach(p=>{const c=document.createElement('div');c.className='cc';c.textContent=`${p.avatar} ${p.name}`;w.appendChild(c);});
+}
+
+async function showBoard(){
+  const {data}=await sb.from('players').select('*').eq('room_id',G.roomId).order('score',{ascending:false});
+  const list=document.getElementById('board-list');if(!list||!data)return;
+  list.innerHTML='';
+  const med=['🥇','🥈','🥉'];
+  data.forEach((p,i)=>{
+    const r=document.createElement('div');r.className='lb-row';
+    const me=p.id===G.playerId;
+    r.innerHTML=`<div class="lb-rank">${med[i]||(i+1)}</div><div class="av">${p.avatar}</div><div class="lb-name">${p.name}${me?'<span class="me-t"> (jij)</span>':''}</div><div class="lb-pts">${p.score}</div>`;
+    list.appendChild(r);
+  });
+  showScreen('s-board');
+  setTimeout(()=>{
+    const next=G.puzIdx+1;
+    if(next>=PZ.length){showScreen('s-piece');refreshPiece();}
+    else{G.puzIdx=next;G.answered=false;renderPuz(next);showScreen('s-game');}
+  },5000);
+}
+
+async function endGame(){
+  clearInterval(G.timerInt);
+  showScreen('s-victory');confetti();
+  const {data}=await sb.from('players').select('*').eq('room_id',G.roomId).order('score',{ascending:false});
+  const sc=document.getElementById('final-scores');
+  if(sc&&data){
+    sc.innerHTML='<div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px">Einduitslag</div>';
+    const med=['🥇','🥈','🥉'];
+    data.forEach((p,i)=>{const r=document.createElement('div');r.className='lb-row';const me=p.id===G.playerId;r.innerHTML=`<div class="lb-rank">${med[i]||(i+1)}</div><div class="av">${p.avatar}</div><div class="lb-name">${p.name}${me?'<span class="me-t"> (jij)</span>':''}</div><div class="lb-pts">${p.score}</div>`;sc.appendChild(r);});
+  }
+  const {data:me}=await sb.from('players').select('personal_message').eq('id',G.playerId).single();
+  if(me&&me.personal_message)showMsg(me.personal_message);
+  else{const poll=setInterval(async()=>{const {data:d2}=await sb.from('players').select('personal_message').eq('id',G.playerId).single();if(d2&&d2.personal_message){clearInterval(poll);showMsg(d2.personal_message);confetti();}},4000);}
+}
+
+function showMsg(msg){
+  document.getElementById('no-msg').style.display='none';
+  document.getElementById('pm-txt').textContent=msg;
+  document.getElementById('pm-box').style.display='block';
+}
+
+function flash(){
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,230,118,.07);display:flex;align-items:center;justify-content:center;z-index:500;animation:solvedFlash .7s ease forwards;pointer-events:none';
+  d.innerHTML='<div style="font-size:64px;font-weight:900;color:var(--green);text-shadow:0 0 40px var(--green)">✓</div>';
+  document.body.appendChild(d);setTimeout(()=>d.remove(),700);
+}
+
+function confetti(){
+  const cv=document.getElementById('confetti');
+  const cx=cv.getContext('2d');
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
+  const ps=Array.from({length:130},()=>({x:Math.random()*cv.width,y:-10,w:Math.random()*10+4,h:Math.random()*6+3,c:['#ff6b35','#ffd60a','#00d4ff','#00e676','#c77dff'][Math.floor(Math.random()*5)],vx:(Math.random()-.5)*4,vy:Math.random()*3+1.5,r:Math.random()*360,vr:(Math.random()-.5)*6,al:1}));
+  let fr=0;
+  function draw(){cx.clearRect(0,0,cv.width,cv.height);ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;if(fr>80)p.al-=0.01;cx.save();cx.globalAlpha=Math.max(0,p.al);cx.translate(p.x,p.y);cx.rotate(p.r*Math.PI/180);cx.fillStyle=p.c;cx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cx.restore();});fr++;if(fr<160)requestAnimationFrame(draw);else cx.clearRect(0,0,cv.width,cv.height);}
+  draw();
+}
+
+function checkPw(){
+  if(document.getElementById('adm-pw').value===ADMIN_PW){document.getElementById('adm-login').style.display='none';document.getElementById('adm-panel').style.display='block';renderQs();toast('Welkom, host! 👋','ok');}
+  else toast('Verkeerd wachtwoord!','err');
+}
+
+async function createRoom(){
+  const code=document.getElementById('adm-code').value.trim().toUpperCase();
+  const time=parseInt(document.getElementById('adm-time').value)||30;
+  if(!code||code.length<3){toast('Vul een spelcode in','err');return;}
+  const {data:ex}=await sb.from('rooms').select('id').eq('code',code).limit(1);
+  let rid;
+  if(ex&&ex.length>0){rid=ex[0].id;await sb.from('rooms').update({status:'lobby',current_puzzle:0,time_limit:time}).eq('id',rid);await sb.from('players').delete().eq('room_id',rid);await sb.from('answers').delete().eq('room_id',rid);toast('Ruimte gereset!','info');}
+  else{const {data,error}=await sb.from('rooms').insert({code,status:'lobby',current_puzzle:0,time_limit:time}).select().single();if(error){toast('Fout: '+error.message,'err');return;}rid=data.id;toast('Ruimte aangemaakt!','ok');}
+  G.roomId=rid;G.roomCode=code;
+  document.getElementById('adm-code-show').textContent=code;
+  document.getElementById('adm-room').style.display='block';
+  subAdminRoom(rid);refreshAdmPlayers(rid);
+}
+
+function subAdminRoom(rid){
+  sb.channel(`adm:${rid}`)
+    .on('postgres_changes',{event:'*',schema:'public',table:'players',filter:`room_id=eq.${rid}`},()=>{refreshAdmPlayers(rid);loadMsgs();})
+    .subscribe();
+}
+
+async function refreshAdmPlayers(rid){
+  const {data}=await sb.from('players').select('*').eq('room_id',rid||G.roomId);
+  if(!data)return;
+  const list=document.getElementById('adm-players');
+  const ct=document.getElementById('adm-count');
+  if(list){list.innerHTML='';data.forEach(p=>{const c=document.createElement('div');c.className='p-chip rdy';c.innerHTML=`<span class="av">${p.avatar}</span><span>${p.name}</span>`;list.appendChild(c);});}
+  if(ct)ct.textContent=data.length;
+}
+
+async function startGame(){
+  if(!G.roomId){toast('Maak eerst een ruimte aan!','err');return;}
+  await sb.from('rooms').update({status:'playing',current_puzzle:0}).eq('id',G.roomId);
+  toast('Spel gestart! 🚀','ok');
+}
+
+async function finalize(){
+  if(!G.roomId){toast('Geen actieve ruimte!','err');return;}
+  await sb.from('rooms').update({status:'victory'}).eq('id',G.roomId);
+  toast('8e stuk geplaatst! Berichten onthullen...','ok');
+}
+
+async function loadMsgs(){
+  if(!G.roomId){toast('Maak eerst een ruimte aan','err');return;}
+  const {data}=await sb.from('players').select('id,name,avatar,personal_message').eq('room_id',G.roomId);
+  const w=document.getElementById('adm-msgs');if(!w||!data)return;
+  w.innerHTML='';
+  data.forEach(p=>{const r=document.createElement('div');r.className='pm-row';r.innerHTML=`<div class="pm-name">${p.avatar} ${p.name}</div><textarea id="pm-${p.id}" placeholder="Schrijf een persoonlijk bericht voor ${p.name}..." rows="3">${p.personal_message||''}</textarea>`;w.appendChild(r);});
+}
+
+async function saveMsgs(){
+  const {data}=await sb.from('players').select('id').eq('room_id',G.roomId);
+  if(!data){toast('Geen spelers gevonden','err');return;}
+  for(const p of data){const el=document.getElementById(`pm-${p.id}`);if(el)await sb.from('players').update({personal_message:el.value}).eq('id',p.id);}
+  toast('Berichten opgeslagen! 💾','ok');
+}
+
+function renderQs(){
+  const w=document.getElementById('adm-qs');if(!w)return;
+  w.innerHTML='';
+  PZ.forEach((pz,i)=>{
+    if(pz.type==='piece')return;
+    const it=document.createElement('div');it.className='q-item';
+    it.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:2px">PUZZEL ${i+1}</span><span class="badge ${pz.bc}" style="margin-bottom:0">${pz.type.toUpperCase()}</span></div>
+      <div class="lbl" style="margin-top:0">Vraag</div><input type="text" id="qq-${i}" value="${pz.q}">
+      ${pz.opts?`<div class="lbl">Antwoorden (komma-gescheiden)</div><input type="text" id="qa-${i}" value="${pz.opts.join(', ')}"><div class="lbl">Correct (0-3)</div><input type="number" id="qc-${i}" value="${pz.ans}" min="0" max="3" style="width:80px">`:
+      pz.type==='cipher'?`<div class="lbl">Gecodeerde tekst</div><input type="text" id="qe-${i}" value="${pz.encoded}"><div class="lbl">Correct antwoord</div><input type="text" id="qd-${i}" value="${pz.decoded}">`:
+      `<div class="lbl">Hint</div><input type="text" id="qh-${i}" value="${pz.h}">`}`;
+    w.appendChild(it);
+  });
+}
+
+function saveQs(){
+  PZ.forEach((pz,i)=>{
+    if(pz.type==='piece')return;
+    const q=document.getElementById(`qq-${i}`);if(q)pz.q=q.value;
+    const a=document.getElementById(`qa-${i}`);if(a)pz.opts=a.value.split(',').map(s=>s.trim());
+    const c=document.getElementById(`qc-${i}`);if(c)pz.ans=parseInt(c.value);
+    const e=document.getElementById(`qe-${i}`);if(e)pz.encoded=e.value;
+    const d=document.getElementById(`qd-${i}`);if(d)pz.decoded=d.value;
+  });
+  toast('Vragen opgeslagen! ✅','ok');
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  initAv();
+  const p=new URLSearchParams(window.location.search);
+  const rc=p.get('room');
+  if(rc)document.getElementById('inp-room').value=rc.toUpperCase();
+});
+</script>
+</body>
+</html>
