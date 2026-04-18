@@ -833,10 +833,10 @@ function startRunner(block) {
   const canvas = document.getElementById('runner-canvas');
   const W = canvas.width, H = canvas.height;
 
-  // Guitar Hero perspective constants
-  const VPX = W / 2, VPY = H * 0.28;       // vanishing point
+  // Perspective constants
+  const VPX = W / 2, VPY = H * 0.30;       // vanishing point
   const PLAY_Y = H * 0.83;                   // player Y
-  const LANE_X = [W * 0.18, W * 0.5, W * 0.82]; // lane X at player level
+  const LANE_X = [W * 0.25, W * 0.5, W * 0.75]; // lane X at player level (narrower corridor)
 
   function px(lane, d) { return VPX + (LANE_X[lane] - VPX) * d; }
   function py(d)        { return VPY + (PLAY_Y - VPY) * d; }
@@ -974,73 +974,238 @@ function startRunner(block) {
 }
 
 function drawRunnerBgPerspective(ctx, W, H, VPX, VPY, PLAY_Y, scroll, activeLane) {
-  // ---- Ceiling ----
-  const ceilGrad = ctx.createLinearGradient(0, 0, 0, VPY);
-  ceilGrad.addColorStop(0, '#F0EDE8');
-  ceilGrad.addColorStop(1, '#B8A898');
-  ctx.fillStyle = ceilGrad;
-  ctx.fillRect(0, 0, W, VPY);
+  // Vanishing point: VPX = W/2, VPY = H*0.30
+  // Left wall dominates left ~40%, right wall right ~30%, floor lower-center
+  const LW_LEFT = 0;         // left wall left edge (screen left)
+  const LW_RIGHT = W * 0.40; // left wall right edge at bottom
+  const RW_LEFT = W * 0.70;  // right wall left edge at bottom
+  const RW_RIGHT = W;        // right wall right edge (screen right)
 
-  // TL strip
-  ctx.fillStyle = 'rgba(255,252,210,0.9)';
-  ctx.fillRect(W * 0.3, 0, W * 0.4, 5);
-  const glow = ctx.createLinearGradient(0, 0, 0, VPY * 0.6);
-  glow.addColorStop(0, 'rgba(255,250,180,0.18)');
-  glow.addColorStop(1, 'rgba(255,250,180,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(W * 0.15, 0, W * 0.7, VPY * 0.6);
+  // ===================== FLOOR =====================
+  const fGrad = ctx.createLinearGradient(0, VPY, 0, H);
+  fGrad.addColorStop(0, '#1A1818');
+  fGrad.addColorStop(1, '#222020');
+  ctx.fillStyle = fGrad;
+  ctx.beginPath();
+  ctx.moveTo(VPX, VPY);
+  ctx.lineTo(LW_RIGHT, H);
+  ctx.lineTo(RW_LEFT, H);
+  ctx.closePath();
+  ctx.fill();
+  // Floor vignette edges
+  const fVig = ctx.createLinearGradient(0, VPY, 0, H);
+  fVig.addColorStop(0, 'rgba(0,0,0,0.6)');
+  fVig.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = fVig;
+  ctx.beginPath();
+  ctx.moveTo(VPX, VPY);
+  ctx.lineTo(LW_RIGHT, H);
+  ctx.lineTo(RW_LEFT, H);
+  ctx.closePath();
+  ctx.fill();
 
-  // ---- Left wall ----
-  const lwGrad = ctx.createLinearGradient(0, 0, VPX, VPY);
-  lwGrad.addColorStop(0, '#7A2E14');
-  lwGrad.addColorStop(1, '#C05838');
+  // ===================== CEILING =====================
+  ctx.fillStyle = '#F0EEEB';
+  ctx.beginPath();
+  ctx.moveTo(VPX, VPY);
+  ctx.lineTo(LW_LEFT, 0);
+  ctx.lineTo(RW_RIGHT, 0);
+  ctx.closePath();
+  ctx.fill();
+  // Ceiling grid (suspended tiles)
+  ctx.strokeStyle = 'rgba(180,175,170,0.35)';
+  ctx.lineWidth = 0.8;
+  const CGRID = 6;
+  for (let i = 1; i < CGRID; i++) {
+    const t = i / CGRID;
+    const cy = VPY * t;
+    // horizontal grid lines (width scales with perspective)
+    const cxL = VPX - (VPX - LW_LEFT) * t;
+    const cxR = VPX + (RW_RIGHT - VPX) * t;
+    ctx.beginPath(); ctx.moveTo(cxL, cy); ctx.lineTo(cxR, cy); ctx.stroke();
+  }
+  // Ceiling vertical grid lines converging to VP
+  for (let i = 0; i <= CGRID; i++) {
+    const bx = LW_LEFT + (RW_RIGHT - LW_LEFT) * (i / CGRID);
+    ctx.beginPath(); ctx.moveTo(VPX, VPY); ctx.lineTo(bx, 0); ctx.stroke();
+  }
+
+  // ===================== LEFT WALL (terracotta/rust-orange) =====================
+  const lwGrad = ctx.createLinearGradient(LW_LEFT, H * 0.5, VPX, VPY);
+  lwGrad.addColorStop(0, '#9E4428');
+  lwGrad.addColorStop(1, '#C4613A');
   ctx.fillStyle = lwGrad;
   ctx.beginPath();
-  ctx.moveTo(0, 0); ctx.lineTo(VPX, VPY); ctx.lineTo(0, H);
-  ctx.closePath(); ctx.fill();
+  ctx.moveTo(VPX, VPY);
+  ctx.lineTo(LW_LEFT, 0);
+  ctx.lineTo(LW_LEFT, H);
+  ctx.lineTo(LW_RIGHT, H);
+  ctx.closePath();
+  ctx.fill();
 
-  // ---- Right wall ----
-  const rwGrad = ctx.createLinearGradient(W, 0, VPX, VPY);
-  rwGrad.addColorStop(0, '#6B2D1A');
-  rwGrad.addColorStop(1, '#B05030');
-  ctx.fillStyle = rwGrad;
-  ctx.beginPath();
-  ctx.moveTo(W, 0); ctx.lineTo(VPX, VPY); ctx.lineTo(W, H);
-  ctx.closePath(); ctx.fill();
-
-  // Wall paintings (left + right, at two depths)
-  [[0.35, 'left'], [0.65, 'left'], [0.35, 'right'], [0.65, 'right']].forEach(([t, side]) => {
-    const wallCenterX = side === 'left'
-      ? t * VPX * 0.7
-      : W - t * (W - VPX) * 0.7;
-    const wallY = VPY + (PLAY_Y - VPY) * (t * 0.5 + 0.15);
-    const sz = 14 + t * 22;
+  // Left wall: doors at intervals (white-framed, getting smaller toward VP)
+  const LW_DOOR_DEPTHS = [0.82, 0.52, 0.28];
+  LW_DOOR_DEPTHS.forEach((depth, di) => {
+    // Interpolate x on left wall: at depth=1 near bottom, depth=0 near VP
+    const wallBottomX = LW_LEFT + (LW_RIGHT - LW_LEFT) * depth;
+    const wallTopX = LW_LEFT + (VPX - LW_LEFT) * depth * 0.5;
+    const doorCX = (wallBottomX + wallTopX) / 2 * 0.6;
+    const doorBY = VPY + (H - VPY) * depth;
+    const doorH = (PLAY_Y - VPY) * depth * 0.85;
+    const doorW = doorH * 0.45;
+    const dx = doorCX - doorW / 2;
+    const dy = doorBY - doorH;
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(wallCenterX - sz / 2, wallY - sz * 0.6, sz, sz * 0.8);
-    ctx.font = Math.round(sz * 0.55) + 'px serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.globalAlpha = 0.55;
-    ctx.fillStyle = '#fff';
-    ctx.fillText('\u{1F415}', wallCenterX, wallY - sz * 0.2);
+    // Door frame (white)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(dx - 3, dy - 3, doorW + 6, doorH + 3);
+    // Door panel (slightly off-white)
+    ctx.fillStyle = '#E8E4DF';
+    ctx.fillRect(dx, dy, doorW, doorH);
+    // Door panel inset
+    ctx.strokeStyle = 'rgba(180,170,160,0.6)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(dx + doorW * 0.12, dy + doorH * 0.08, doorW * 0.76, doorH * 0.4);
+    ctx.strokeRect(dx + doorW * 0.12, dy + doorH * 0.55, doorW * 0.76, doorH * 0.37);
+    // Door handle
+    ctx.fillStyle = '#C0A050';
+    ctx.beginPath();
+    ctx.arc(dx + doorW * 0.75, dy + doorH * 0.52, doorH * 0.025, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   });
 
-  // ---- Floor ----
-  const fGrad = ctx.createLinearGradient(0, VPY, 0, H);
-  fGrad.addColorStop(0, '#1E0E08');
-  fGrad.addColorStop(1, '#0A0503');
-  ctx.fillStyle = fGrad;
-  ctx.fillRect(0, VPY, W, H - VPY);
+  // Left wall: canvas paintings between doors
+  const PAINTING_EMOJIS = ['\u{1F436}', '\u{1F431}', '\u{1F415}', '\u{1F408}'];
+  const LW_PAINT_DEPTHS = [0.68, 0.38, 0.20];
+  LW_PAINT_DEPTHS.forEach((depth, pi) => {
+    const wallBottomX = LW_LEFT + (LW_RIGHT - LW_LEFT) * depth;
+    const wallTopX = LW_LEFT + (VPX - LW_LEFT) * depth * 0.5;
+    const pCX = (wallBottomX + wallTopX) / 2 * 0.55;
+    const pBY = VPY + (PLAY_Y - VPY) * depth;
+    const pH = (PLAY_Y - VPY) * depth * 0.55;
+    const pW = pH * 1.3;
+    const px0 = pCX - pW / 2;
+    const py0 = pBY - pH * 1.0;
+    ctx.save();
+    // Shadow under painting
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 3;
+    // White frame
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(px0 - 3, py0 - 3, pW + 6, pH + 6);
+    ctx.shadowColor = 'transparent';
+    // Horizontal wooden slat fill
+    const SLAT_N = Math.max(4, Math.round(pH / 6));
+    for (let s = 0; s < SLAT_N; s++) {
+      const slatY = py0 + (s / SLAT_N) * pH;
+      const slatH = pH / SLAT_N - 0.5;
+      const grey = 180 + Math.round((s % 2) * 20 + Math.random() * 8);
+      ctx.fillStyle = 'rgb(' + grey + ',' + (grey - 10) + ',' + (grey - 20) + ')';
+      ctx.fillRect(px0, slatY, pW, slatH);
+    }
+    // Dividing lines between slats
+    ctx.strokeStyle = 'rgba(120,100,80,0.35)';
+    ctx.lineWidth = 0.5;
+    for (let s = 1; s < SLAT_N; s++) {
+      const sY = py0 + (s / SLAT_N) * pH;
+      ctx.beginPath(); ctx.moveTo(px0, sY); ctx.lineTo(px0 + pW, sY); ctx.stroke();
+    }
+    // Animal emoji on top
+    const emoji = PAINTING_EMOJIS[pi % PAINTING_EMOJIS.length];
+    const efs = Math.max(10, Math.round(pH * 0.55));
+    ctx.font = efs + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(emoji, pCX, py0 + pH * 0.5);
+    ctx.restore();
+  });
 
-  // Lane bounds at bottom: 0, W*0.33, W*0.67, W — all converge to VPX
-  const BOUNDS_B = [0, W * 0.33, W * 0.67, W];
+  // ===================== RIGHT WALL (creamy white + frosted glass) =====================
+  // Upper portion: creamy white
+  ctx.fillStyle = '#E0DDD8';
+  ctx.beginPath();
+  ctx.moveTo(VPX, VPY);
+  ctx.lineTo(RW_RIGHT, 0);
+  ctx.lineTo(RW_RIGHT, H);
+  ctx.lineTo(RW_LEFT, H);
+  ctx.closePath();
+  ctx.fill();
 
-  // Active lane highlight
+  // Glass panels in lower portion
+  const GLASS_PANEL_DEPTHS = [0.85, 0.60, 0.38, 0.20];
+  GLASS_PANEL_DEPTHS.forEach((depth) => {
+    const panelBY = VPY + (H - VPY) * depth;
+    const panelTY = VPY + (PLAY_Y - VPY) * depth * 0.35;
+    const panelLX = VPX + (RW_LEFT - VPX) * depth;
+    const panelRX = VPX + (RW_RIGHT - VPX) * (depth * 0.5 + 0.5);
+    const panelW = panelRX - panelLX;
+    ctx.save();
+    // White metal frame
+    ctx.fillStyle = '#CCCCCC';
+    ctx.fillRect(panelLX - 2, panelTY - 2, panelW + 4, panelBY - panelTY + 4);
+    // Frosted glass fill
+    ctx.fillStyle = 'rgba(200,215,225,0.55)';
+    ctx.fillRect(panelLX, panelTY, panelW, panelBY - panelTY);
+    // Glass glare
+    const glareGrad = ctx.createLinearGradient(panelLX, panelTY, panelLX + panelW * 0.4, panelTY);
+    glareGrad.addColorStop(0, 'rgba(255,255,255,0.28)');
+    glareGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glareGrad;
+    ctx.fillRect(panelLX, panelTY, panelW, panelBY - panelTY);
+    // Horizontal frame divider
+    const midY = panelTY + (panelBY - panelTY) * 0.5;
+    ctx.strokeStyle = '#BBBBBB';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(panelLX, midY); ctx.lineTo(panelRX, midY); ctx.stroke();
+    ctx.restore();
+  });
+
+  // ===================== CEILING SPOTLIGHTS =====================
+  const SPOT_DEPTHS = [0.15, 0.30, 0.50, 0.72, 0.90];
+  SPOT_DEPTHS.forEach((depth) => {
+    const sx = VPX;
+    const sy = VPY * depth;
+    const sr = Math.max(2, 7 * depth);
+    // Spotlight circle
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+    // Warm cone glow downward
+    const coneH = (PLAY_Y - VPY) * depth * 0.6;
+    const coneW = coneH * 0.5;
+    const coneGrad = ctx.createRadialGradient(sx, sy, sr, sx, sy + coneH, coneW);
+    coneGrad.addColorStop(0, 'rgba(255,240,180,0.22)');
+    coneGrad.addColorStop(1, 'rgba(255,240,180,0)');
+    ctx.fillStyle = coneGrad;
+    ctx.beginPath();
+    ctx.moveTo(sx - sr, sy);
+    ctx.lineTo(sx - coneW, sy + coneH);
+    ctx.lineTo(sx + coneW, sy + coneH);
+    ctx.lineTo(sx + sr, sy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // ===================== BASEBOARD TRIM =====================
+  // Left wall / floor junction
+  ctx.strokeStyle = '#111111';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(VPX, VPY); ctx.lineTo(LW_RIGHT, H); ctx.stroke();
+  // Right wall / floor junction
+  ctx.beginPath(); ctx.moveTo(VPX, VPY); ctx.lineTo(RW_LEFT, H); ctx.stroke();
+
+  // ===================== ACTIVE LANE HIGHLIGHT =====================
+  const BOUNDS_B = [LW_RIGHT, LW_RIGHT + (RW_LEFT - LW_RIGHT) / 3, LW_RIGHT + (RW_LEFT - LW_RIGHT) * 2 / 3, RW_LEFT];
   ctx.save();
-  ctx.fillStyle = 'rgba(241,196,15,0.07)';
+  const laneGrad = ctx.createLinearGradient(0, VPY, 0, H);
+  laneGrad.addColorStop(0, 'rgba(241,196,15,0.0)');
+  laneGrad.addColorStop(1, 'rgba(241,196,15,0.13)');
+  ctx.fillStyle = laneGrad;
   ctx.beginPath();
   ctx.moveTo(VPX, VPY);
   ctx.lineTo(BOUNDS_B[activeLane], H);
@@ -1049,33 +1214,27 @@ function drawRunnerBgPerspective(ctx, W, H, VPX, VPY, PLAY_Y, scroll, activeLane
   ctx.fill();
   ctx.restore();
 
-  // Lane divider lines (perspective)
-  ctx.strokeStyle = 'rgba(241,196,15,0.25)';
-  ctx.lineWidth = 1.5;
+  // Lane divider lines
+  ctx.strokeStyle = 'rgba(241,196,15,0.20)';
+  ctx.lineWidth = 1;
   BOUNDS_B.forEach(bx => {
     ctx.beginPath(); ctx.moveTo(VPX, VPY); ctx.lineTo(bx, H); ctx.stroke();
   });
 
-  // Scrolling horizontal floor lines (motion sense)
+  // ===================== FLOOR SCROLL LINES =====================
   const NLINES = 14;
   for (let i = 0; i < NLINES; i++) {
     const t = ((i / NLINES) + scroll) % 1;
     if (t < 0.01) continue;
     const lineY = VPY + (H - VPY) * t;
-    const lw0 = 0, lw1 = W * t;
-    const lx = VPX - lw1 / 2;
-    const rx = VPX + lw1 / 2;
-    ctx.strokeStyle = 'rgba(200,130,70,' + (t * 0.18) + ')';
+    // Width of floor at this depth
+    const floorW = (RW_LEFT - LW_RIGHT) * t;
+    const lx = VPX - floorW / 2;
+    const rx = VPX + floorW / 2;
+    ctx.strokeStyle = 'rgba(100,80,60,' + (t * 0.22) + ')';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(Math.max(0, lx), lineY); ctx.lineTo(Math.min(W, rx), lineY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lx, lineY); ctx.lineTo(rx, lineY); ctx.stroke();
   }
-
-  // Ceiling perspective lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-  ctx.lineWidth = 1;
-  BOUNDS_B.forEach(bx => {
-    ctx.beginPath(); ctx.moveTo(VPX, VPY); ctx.lineTo(bx, 0); ctx.stroke();
-  });
 }
 
 function onRunnerTouchStart(e) { runnerTouchX = e.touches[0].clientX; }
@@ -1293,7 +1452,15 @@ function initMatchBoard() {
     for (let r = 0; r < 6; r++) {
       matchBoard[r] = [];
       for (let c = 0; c < 6; c++) {
-        matchBoard[r][c] = Math.floor(Math.random() * 6);
+        // Weighted: center columns (2,3) avoid types 0 and 1 slightly
+        let t;
+        const isCenterCol = (c === 2 || c === 3);
+        if (isCenterCol && Math.random() < 0.55) {
+          t = 2 + Math.floor(Math.random() * 4); // types 2-5 in center
+        } else {
+          t = Math.floor(Math.random() * 6);
+        }
+        matchBoard[r][c] = { t: t, sp: 0 };
       }
     }
     attempts++;
@@ -1314,14 +1481,40 @@ function drawMatchBoard(ctx) {
 
   for (let r = 0; r < 6; r++) {
     for (let c = 0; c < 6; c++) {
-      const t = matchBoard[r][c];
+      const cell = matchBoard[r][c];
+      if (!cell) continue;
+      const t = cell.t;
+      const sp = cell.sp;
       const x = c * 56, y = r * 56;
       const isSelected = matchSel && matchSel.r === r && matchSel.c === c;
+      const cx = x + 28, cy = y + 28;
 
-      ctx.fillStyle = TCOLORS[t] + (isSelected ? 'AA' : '44');
+      // Background fill (50% opacity)
+      ctx.globalAlpha = isSelected ? 0.75 : 0.5;
+      ctx.fillStyle = TCOLORS[t];
+      roundRect(ctx, x + 3, y + 3, 50, 50, 10);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Shine gradient overlay
+      const shine = ctx.createLinearGradient(x + 3, y + 3, x + 53, y + 53);
+      shine.addColorStop(0, 'rgba(255,255,255,0.22)');
+      shine.addColorStop(0.45, 'rgba(255,255,255,0.05)');
+      shine.addColorStop(1, 'rgba(0,0,0,0.15)');
+      ctx.fillStyle = shine;
       roundRect(ctx, x + 3, y + 3, 50, 50, 10);
       ctx.fill();
 
+      // Top/left inner highlight
+      ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + 13, y + 3);
+      ctx.lineTo(x + 3, y + 3);
+      ctx.lineTo(x + 3, y + 13);
+      ctx.stroke();
+
+      // Selection ring
       if (isSelected) {
         ctx.strokeStyle = TCOLORS[t];
         ctx.lineWidth = 2.5;
@@ -1329,11 +1522,64 @@ function drawMatchBoard(ctx) {
         ctx.stroke();
       }
 
-      ctx.font = '28px serif';
+      // Emoji size: smaller for special tiles
+      const emojiSize = sp > 0 ? 22 : 28;
+      const emojiY = sp > 0 ? cy - 4 : cy;
+      ctx.font = emojiSize + 'px serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#fff';
-      ctx.fillText(TILES[t], x + 28, y + 28);
+      ctx.globalAlpha = 1;
+      ctx.fillText(TILES[t], cx, emojiY);
+
+      // Special overlays
+      if (sp === 1) {
+        // stripe-H: 3 horizontal white lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.80)';
+        ctx.lineWidth = 1.5;
+        [-5, 0, 5].forEach(oy => {
+          ctx.beginPath(); ctx.moveTo(x + 5, cy + oy + 8); ctx.lineTo(x + 51, cy + oy + 8); ctx.stroke();
+        });
+      } else if (sp === 2) {
+        // stripe-V: 3 vertical white lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.80)';
+        ctx.lineWidth = 1.5;
+        [-5, 0, 5].forEach(ox => {
+          ctx.beginPath(); ctx.moveTo(cx + ox, y + 5); ctx.lineTo(cx + ox, y + 51); ctx.stroke();
+        });
+      } else if (sp === 3) {
+        // bomb: white star/cross (4 lines at 45deg from center)
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.lineWidth = 2;
+        const R = 9;
+        const angles = [0, 45, 90, 135];
+        angles.forEach(deg => {
+          const rad = deg * Math.PI / 180;
+          const bcy = cy + 8;
+          ctx.beginPath();
+          ctx.moveTo(cx - Math.cos(rad) * R, bcy - Math.sin(rad) * R);
+          ctx.lineTo(cx + Math.cos(rad) * R, bcy + Math.sin(rad) * R);
+          ctx.stroke();
+        });
+        // Center dot
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(cx, cy + 8, 2.5, 0, Math.PI * 2); ctx.fill();
+      } else if (sp === 4) {
+        // rainbow: 4 colored quarter arcs
+        const arcR = 9;
+        const arcY = cy + 8;
+        const qColors = [TCOLORS[0], TCOLORS[1], TCOLORS[2], TCOLORS[3]];
+        qColors.forEach((col, qi) => {
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(cx, arcY, arcR, qi * Math.PI / 2, (qi + 1) * Math.PI / 2);
+          ctx.stroke();
+        });
+        // Small white center
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(cx, arcY, 2, 0, Math.PI * 2); ctx.fill();
+      }
     }
   }
 
@@ -1422,7 +1668,7 @@ function findMatchCells() {
     let c = 0;
     while (c < 6) {
       let len = 1;
-      while (c + len < 6 && matchBoard[r][c + len] === matchBoard[r][c]) len++;
+      while (c + len < 6 && matchBoard[r][c + len].t === matchBoard[r][c].t) len++;
       if (len >= 3) { for (let i = 0; i < len; i++) matched.add(r + ',' + (c + i)); }
       c += len;
     }
@@ -1432,7 +1678,7 @@ function findMatchCells() {
     let r = 0;
     while (r < 6) {
       let len = 1;
-      while (r + len < 6 && matchBoard[r + len][c] === matchBoard[r][c]) len++;
+      while (r + len < 6 && matchBoard[r + len][c].t === matchBoard[r][c].t) len++;
       if (len >= 3) { for (let i = 0; i < len; i++) matched.add((r + i) + ',' + c); }
       r += len;
     }
@@ -1441,7 +1687,95 @@ function findMatchCells() {
 }
 
 function processMatches(cells) {
-  // Calculate score
+  // Identify runs for special tile creation
+  // We collect extra cells to clear from special activations
+  const extraClear = new Set();
+
+  // Build horizontal runs
+  const hRuns = [];
+  for (let r = 0; r < 6; r++) {
+    let c = 0;
+    while (c < 6) {
+      let len = 1;
+      while (c + len < 6 && matchBoard[r][c + len].t === matchBoard[r][c].t) len++;
+      if (len >= 3) {
+        hRuns.push({ r, c, len, t: matchBoard[r][c].t });
+      }
+      c += len;
+    }
+  }
+  // Build vertical runs
+  const vRuns = [];
+  for (let c = 0; c < 6; c++) {
+    let r = 0;
+    while (r < 6) {
+      let len = 1;
+      while (r + len < 6 && matchBoard[r + len][c].t === matchBoard[r][c].t) len++;
+      if (len >= 3) {
+        vRuns.push({ r, c, len, t: matchBoard[r][c].t });
+      }
+      r += len;
+    }
+  }
+
+  // Find L/T intersections
+  const intersections = [];
+  hRuns.forEach(h => {
+    vRuns.forEach(v => {
+      // Check if they share a cell and same type
+      if (h.t === v.t) {
+        const hCells = [];
+        for (let i = 0; i < h.len; i++) hCells.push({ r: h.r, c: h.c + i });
+        const vCells = [];
+        for (let i = 0; i < v.len; i++) vCells.push({ r: v.r + i, c: v.c });
+        hCells.forEach(hc => {
+          vCells.forEach(vc => {
+            if (hc.r === vc.r && hc.c === vc.c) {
+              intersections.push({ r: hc.r, c: hc.c, t: h.t });
+            }
+          });
+        });
+      }
+    });
+  });
+
+  // Check which cells have special tiles being matched (activation)
+  const cellSet = new Set(cells.map(({ r, c }) => r + ',' + c));
+  cells.forEach(({ r, c }) => {
+    const cell = matchBoard[r][c];
+    if (cell && cell.sp > 0) {
+      if (cell.sp === 1) {
+        // stripe-H: clear entire row
+        for (let cc = 0; cc < 6; cc++) extraClear.add(r + ',' + cc);
+      } else if (cell.sp === 2) {
+        // stripe-V: clear entire column
+        for (let rr = 0; rr < 6; rr++) extraClear.add(rr + ',' + c);
+      } else if (cell.sp === 3) {
+        // bomb: clear 3x3
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+          const rr = r + dr, cc = c + dc;
+          if (rr >= 0 && rr < 6 && cc >= 0 && cc < 6) extraClear.add(rr + ',' + cc);
+        }
+      } else if (cell.sp === 4) {
+        // rainbow: find a normal tile adjacent and clear all of that type
+        let targetType = -1;
+        const adj = [{r:r-1,c},{r:r+1,c},{r,c:c-1},{r,c:c+1}];
+        adj.forEach(a => {
+          if (targetType === -1 && a.r >= 0 && a.r < 6 && a.c >= 0 && a.c < 6) {
+            const nb = matchBoard[a.r][a.c];
+            if (nb && nb.sp === 0) targetType = nb.t;
+          }
+        });
+        if (targetType >= 0) {
+          for (let rr = 0; rr < 6; rr++) for (let cc = 0; cc < 6; cc++) {
+            if (matchBoard[rr][cc] && matchBoard[rr][cc].t === targetType) extraClear.add(rr + ',' + cc);
+          }
+        }
+      }
+    }
+  });
+
+  // Score calculation
   const groups = groupMatches(cells);
   groups.forEach(g => {
     const len = g.length;
@@ -1456,12 +1790,64 @@ function processMatches(cells) {
     }
   });
 
-  // Remove matched cells
-  cells.forEach(({ r, c }) => { matchBoard[r][c] = -1; });
+  // Place special tiles BEFORE removing (at center of qualifying runs)
+  const specialPlacements = [];
+  // L/T shape -> bomb
+  intersections.forEach(({ r, c, t }) => {
+    specialPlacements.push({ r, c, t, sp: 3 });
+  });
+  // Straight runs of 5+ -> rainbow
+  hRuns.forEach(run => {
+    if (run.len >= 5) {
+      const midC = run.c + Math.floor(run.len / 2);
+      // Only if not already an intersection
+      if (!intersections.find(x => x.r === run.r && x.c === midC)) {
+        specialPlacements.push({ r: run.r, c: midC, t: run.t, sp: 4 });
+      }
+    }
+  });
+  vRuns.forEach(run => {
+    if (run.len >= 5) {
+      const midR = run.r + Math.floor(run.len / 2);
+      if (!intersections.find(x => x.r === midR && x.c === run.c)) {
+        specialPlacements.push({ r: midR, c: run.c, t: run.t, sp: 4 });
+      }
+    }
+  });
+  // Runs of exactly 4 -> stripe
+  hRuns.forEach(run => {
+    if (run.len === 4) {
+      const midC = run.c + 1;
+      if (!specialPlacements.find(x => x.r === run.r && x.c === midC)) {
+        specialPlacements.push({ r: run.r, c: midC, t: run.t, sp: 1 });
+      }
+    }
+  });
+  vRuns.forEach(run => {
+    if (run.len === 4) {
+      const midR = run.r + 1;
+      if (!specialPlacements.find(x => x.r === midR && x.c === run.c)) {
+        specialPlacements.push({ r: midR, c: run.c, t: run.t, sp: 2 });
+      }
+    }
+  });
+
+  // Remove matched cells + extra
+  const allClear = new Set([...cellSet, ...extraClear]);
+  allClear.forEach(key => {
+    const [rr, cc] = key.split(',').map(Number);
+    matchBoard[rr][cc] = null;
+  });
+
+  // Apply special placements (where cell was cleared)
+  specialPlacements.forEach(({ r, c, t, sp }) => {
+    if (matchBoard[r][c] === null) {
+      matchBoard[r][c] = { t, sp };
+    }
+  });
 
   // Drop cells
   dropCells();
-
   // Refill
   refillBoard();
 
@@ -1472,7 +1858,6 @@ function processMatches(cells) {
       processMatches(newMatches);
     } else {
       matchAnimating = false;
-      // Check if any moves possible
       if (!hasAnyMove()) {
         initMatchBoard();
       }
@@ -1512,10 +1897,10 @@ function dropCells() {
   for (let c = 0; c < 6; c++) {
     let empty = [];
     for (let r = 5; r >= 0; r--) {
-      if (matchBoard[r][c] === -1) empty.push(r);
+      if (matchBoard[r][c] === null) empty.push(r);
       else if (empty.length > 0) {
         matchBoard[empty.shift()][c] = matchBoard[r][c];
-        matchBoard[r][c] = -1;
+        matchBoard[r][c] = null;
         empty.push(r);
       }
     }
@@ -1525,7 +1910,7 @@ function dropCells() {
 function refillBoard() {
   for (let r = 0; r < 6; r++) {
     for (let c = 0; c < 6; c++) {
-      if (matchBoard[r][c] === -1) matchBoard[r][c] = Math.floor(Math.random() * 6);
+      if (matchBoard[r][c] === null) matchBoard[r][c] = { t: Math.floor(Math.random() * 6), sp: 0 };
     }
   }
 }
