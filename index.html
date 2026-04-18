@@ -220,7 +220,14 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
       <div class="timer-num" id="runner-timer-num">30</div>
     </div>
   </div>
-  <canvas id="runner-canvas" width="340" height="400"></canvas>
+  <div id="runner-hint" style="position:relative;width:340px;">
+    <canvas id="runner-canvas" width="340" height="400"></canvas>
+    <div id="runner-instruction" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(13,13,43,.85);border:1.5px solid var(--gold);border-radius:16px;padding:14px 20px;text-align:center;pointer-events:none;transition:opacity .5s;">
+      <div style="font-size:22px;margin-bottom:6px;">&#11088; Vang sterren &nbsp;&#8594;&nbsp; <span style="color:var(--gold);">+20</span></div>
+      <div style="font-size:22px;">&#128021; Ontwijkt obstakels &nbsp;&#8594;&nbsp; <span style="color:var(--red);">-punten</span></div>
+      <div style="font-size:13px;color:var(--text2);margin-top:8px;font-weight:600;">Swipe of gebruik de pijltjes</div>
+    </div>
+  </div>
   <div class="runner-controls">
     <button class="btn btn-secondary" id="runner-left" ontouchstart="runnerMove(-1)" onmousedown="runnerMove(-1)">&#8592;</button>
     <button class="btn btn-secondary" id="runner-right" ontouchstart="runnerMove(1)" onmousedown="runnerMove(1)">&#8594;</button>
@@ -457,6 +464,8 @@ let runnerStars = [];
 let runnerFrame = 0;
 let runnerDone = false;
 let runnerTouchX = null;
+let runnerFloats = [];
+let runnerFlash = { alpha: 0, color: '#22C55E' };
 
 // Trivia
 let triviaIntervalId = null;
@@ -806,6 +815,11 @@ async function advancePhase() {
 // =============================================================
 function startRunner(block) {
   showScreen('screen-runner');
+
+  // Show instruction overlay, fade after 2.5s
+  const instr = document.getElementById('runner-instruction');
+  if (instr) { instr.style.opacity = '1'; setTimeout(() => { instr.style.opacity = '0'; }, 2500); }
+
   runnerScore = 0;
   runnerTime = CONFIG.RUNNER_DUUR;
   runnerLane = 1;
@@ -813,40 +827,46 @@ function startRunner(block) {
   runnerStars = [];
   runnerFrame = 0;
   runnerDone = false;
+  runnerFloats = [];
+  runnerFlash = { alpha: 0, color: '#22C55E' };
 
   const canvas = document.getElementById('runner-canvas');
   const W = canvas.width, H = canvas.height;
-  const laneX = [W * 0.18, W * 0.5, W * 0.82];
+
+  // Guitar Hero perspective constants
+  const VPX = W / 2, VPY = H * 0.28;       // vanishing point
+  const PLAY_Y = H * 0.83;                   // player Y
+  const LANE_X = [W * 0.18, W * 0.5, W * 0.82]; // lane X at player level
+
+  function px(lane, d) { return VPX + (LANE_X[lane] - VPX) * d; }
+  function py(d)        { return VPY + (PLAY_Y - VPY) * d; }
+
+  let scroll = 0;
 
   document.getElementById('runner-score-display').textContent = '0';
   updateRunnerTimer(CONFIG.RUNNER_DUUR);
 
-  // Swipe
   runnerTouchX = null;
   canvas.addEventListener('touchstart', onRunnerTouchStart, { passive: true });
   canvas.addEventListener('touchend', onRunnerTouchEnd, { passive: true });
 
-  // Timer
   runnerIntervalId = setInterval(() => {
     runnerTime--;
     updateRunnerTimer(runnerTime);
-    if (runnerTime <= 0) {
-      clearInterval(runnerIntervalId); runnerIntervalId = null;
-      runnerDone = true;
-    }
+    if (runnerTime <= 0) { clearInterval(runnerIntervalId); runnerIntervalId = null; runnerDone = true; }
   }, 1000);
 
   const ctx = canvas.getContext('2d');
 
   function loop() {
     if (!runnerDone) runnerRAF = requestAnimationFrame(loop);
-
     ctx.clearRect(0, 0, W, H);
-    drawRunnerBg(ctx, W, H);
 
-    const speed = CONFIG.RUNNER_SNELHEID_START +
-      (CONFIG.RUNNER_SNELHEID_MAX - CONFIG.RUNNER_SNELHEID_START) *
-      ((CONFIG.RUNNER_DUUR - runnerTime) / CONFIG.RUNNER_DUUR);
+    const progress = (CONFIG.RUNNER_DUUR - runnerTime) / CONFIG.RUNNER_DUUR;
+    const speed = 0.009 + progress * 0.013;
+    scroll = (scroll + speed) % 1;
+
+    drawRunnerBgPerspective(ctx, W, H, VPX, VPY, PLAY_Y, scroll, runnerLane);
 
     runnerFrame++;
     if (!runnerDone) runnerScore = Math.max(0, runnerScore + CONFIG.RUNNER_BASEPUNTEN);
@@ -855,52 +875,90 @@ function startRunner(block) {
     if (runnerFrame % CONFIG.RUNNER_SPAWN_FRAMES === 0) {
       const lane = Math.floor(Math.random() * 3);
       const ob = OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)];
-      runnerObjs.push({ x: laneX[lane], y: -30, lane, emoji: ob.emoji, pts: ob.pts });
+      runnerObjs.push({ lane, d: 0.06, emoji: ob.emoji, pts: ob.pts });
     }
-    // Spawn stars
-    if (runnerFrame % Math.floor(CONFIG.RUNNER_SPAWN_FRAMES * 1.8) === 0) {
-      const lane = Math.floor(Math.random() * 3);
-      runnerStars.push({ x: laneX[lane], y: -30, lane });
+    // Spawn stars (different lane from last obstacle if possible)
+    if (runnerFrame % Math.floor(CONFIG.RUNNER_SPAWN_FRAMES * 1.5) === 0) {
+      runnerStars.push({ lane: Math.floor(Math.random() * 3), d: 0.06 });
     }
 
-    const playerX = laneX[runnerLane];
-    const playerY = H - 60;
-
-    // Update & draw obstacles
+    // Draw obstacles back-to-front
+    runnerObjs.sort((a, b) => a.d - b.d);
     runnerObjs = runnerObjs.filter(o => {
-      o.y += speed;
-      ctx.font = '32px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(o.emoji, o.x, o.y);
-      if (!runnerDone && Math.abs(o.x - playerX) < 30 && Math.abs(o.y - playerY) < 38) {
-        runnerScore = Math.max(0, runnerScore + o.pts);
-        document.getElementById('runner-score-display').textContent = runnerScore;
+      o.d += speed;
+      if (o.d >= 0.96) {
+        if (!runnerDone && o.lane === runnerLane) {
+          runnerScore = Math.max(0, runnerScore + o.pts);
+          runnerFloats.push({ x: LANE_X[runnerLane], y: PLAY_Y - 30, txt: String(o.pts), alpha: 1, col: '#EF4444' });
+          runnerFlash = { alpha: 0.45, color: '#EF4444' };
+          document.getElementById('runner-score-display').textContent = runnerScore;
+        }
         return false;
       }
-      return o.y < H + 40;
+      const fs = Math.max(10, Math.round(34 * o.d));
+      ctx.save();
+      ctx.font = fs + 'px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = Math.min(1, o.d * 2.5);
+      ctx.fillText(o.emoji, px(o.lane, o.d), py(o.d));
+      ctx.restore();
+      return true;
     });
 
-    // Update & draw stars
+    // Draw stars back-to-front
+    runnerStars.sort((a, b) => a.d - b.d);
     runnerStars = runnerStars.filter(s => {
-      s.y += speed;
-      ctx.font = '26px serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('\u2B50', s.x, s.y);
-      if (!runnerDone && Math.abs(s.x - playerX) < 22 && Math.abs(s.y - playerY) < 26) {
-        runnerScore += CONFIG.STER_PUNTEN;
-        document.getElementById('runner-score-display').textContent = runnerScore;
+      s.d += speed;
+      if (s.d >= 0.96) {
+        if (!runnerDone && s.lane === runnerLane) {
+          runnerScore += CONFIG.STER_PUNTEN;
+          runnerFloats.push({ x: LANE_X[runnerLane], y: PLAY_Y - 30, txt: '+' + CONFIG.STER_PUNTEN, alpha: 1, col: '#F1C40F' });
+          runnerFlash = { alpha: 0.35, color: '#F1C40F' };
+          document.getElementById('runner-score-display').textContent = runnerScore;
+        }
         return false;
       }
-      return s.y < H + 40;
+      const fs = Math.max(8, Math.round(28 * s.d));
+      ctx.save();
+      ctx.font = fs + 'px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = Math.min(1, s.d * 2.5);
+      ctx.fillText('\u2B50', px(s.lane, s.d), py(s.d));
+      ctx.restore();
+      return true;
     });
 
-    // Draw player
+    // Player
     ctx.font = '36px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('\u{1F3C3}', playerX, playerY);
+    ctx.globalAlpha = 1;
+    ctx.fillText('\u{1F3C3}', LANE_X[runnerLane], PLAY_Y);
+
+    // Screen flash on hit/star
+    if (runnerFlash.alpha > 0) {
+      ctx.fillStyle = runnerFlash.color;
+      ctx.globalAlpha = runnerFlash.alpha;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+      runnerFlash.alpha -= 0.05;
+    }
+
+    // Floating score texts
+    runnerFloats = runnerFloats.filter(f => {
+      f.y -= 1.8; f.alpha -= 0.022;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, f.alpha);
+      ctx.font = 'bold 700 20px Nunito,sans-serif';
+      ctx.fillStyle = f.col;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(f.txt, f.x, f.y);
+      ctx.restore();
+      return f.alpha > 0;
+    });
 
     document.getElementById('runner-score-display').textContent = runnerScore;
 
@@ -915,68 +973,109 @@ function startRunner(block) {
   runnerRAF = requestAnimationFrame(loop);
 }
 
-function drawRunnerBg(ctx, W, H) {
-  // Ceiling
-  ctx.fillStyle = '#F5F5F0';
-  ctx.fillRect(0, 0, W, H * 0.12);
+function drawRunnerBgPerspective(ctx, W, H, VPX, VPY, PLAY_Y, scroll, activeLane) {
+  // ---- Ceiling ----
+  const ceilGrad = ctx.createLinearGradient(0, 0, 0, VPY);
+  ceilGrad.addColorStop(0, '#F0EDE8');
+  ceilGrad.addColorStop(1, '#B8A898');
+  ctx.fillStyle = ceilGrad;
+  ctx.fillRect(0, 0, W, VPY);
 
-  // Wall gradient
-  const wg = ctx.createLinearGradient(0, H * 0.12, 0, H * 0.57);
-  wg.addColorStop(0, '#6B2D1A');
-  wg.addColorStop(1, '#C05A38');
-  ctx.fillStyle = wg;
-  ctx.fillRect(0, H * 0.12, W, H * 0.45);
+  // TL strip
+  ctx.fillStyle = 'rgba(255,252,210,0.9)';
+  ctx.fillRect(W * 0.3, 0, W * 0.4, 5);
+  const glow = ctx.createLinearGradient(0, 0, 0, VPY * 0.6);
+  glow.addColorStop(0, 'rgba(255,250,180,0.18)');
+  glow.addColorStop(1, 'rgba(255,250,180,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(W * 0.15, 0, W * 0.7, VPY * 0.6);
 
-  // Floor gradient
-  const fg = ctx.createLinearGradient(0, H * 0.57, 0, H);
-  fg.addColorStop(0, '#2d1608');
-  fg.addColorStop(1, '#1a0f0a');
-  ctx.fillStyle = fg;
-  ctx.fillRect(0, H * 0.57, W, H * 0.43);
+  // ---- Left wall ----
+  const lwGrad = ctx.createLinearGradient(0, 0, VPX, VPY);
+  lwGrad.addColorStop(0, '#7A2E14');
+  lwGrad.addColorStop(1, '#C05838');
+  ctx.fillStyle = lwGrad;
+  ctx.beginPath();
+  ctx.moveTo(0, 0); ctx.lineTo(VPX, VPY); ctx.lineTo(0, H);
+  ctx.closePath(); ctx.fill();
 
-  // Perspective lines from vanishing point
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth = 1;
-  const vpX = W / 2, vpY = H * 0.3;
-  for (let i = 0; i <= 5; i++) {
-    const bx = (i / 5) * W;
-    ctx.beginPath(); ctx.moveTo(vpX, vpY); ctx.lineTo(bx, H); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(vpX, vpY); ctx.lineTo(bx, 0); ctx.stroke();
-  }
-  ctx.restore();
+  // ---- Right wall ----
+  const rwGrad = ctx.createLinearGradient(W, 0, VPX, VPY);
+  rwGrad.addColorStop(0, '#6B2D1A');
+  rwGrad.addColorStop(1, '#B05030');
+  ctx.fillStyle = rwGrad;
+  ctx.beginPath();
+  ctx.moveTo(W, 0); ctx.lineTo(VPX, VPY); ctx.lineTo(W, H);
+  ctx.closePath(); ctx.fill();
 
-  // Lane markers
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = 1;
-  [W * 0.33, W * 0.67].forEach(x => {
-    ctx.beginPath(); ctx.moveTo(x, H * 0.35); ctx.lineTo(x, H); ctx.stroke();
-  });
-  ctx.restore();
-
-  // TL lamp
-  ctx.save();
-  ctx.fillStyle = 'rgba(255,250,200,0.15)';
-  ctx.fillRect(W * 0.3, 0, W * 0.4, H * 0.04);
-  ctx.fillStyle = 'rgba(255,250,180,0.08)';
-  ctx.fillRect(W * 0.1, 0, W * 0.8, H * 0.08);
-  ctx.restore();
-
-  // Wall art frames
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx.lineWidth = 2;
-  [[W * 0.1, H * 0.2, 44, 36], [W * 0.72, H * 0.22, 44, 36]].forEach(([x, y, w, h]) => {
-    ctx.strokeRect(x, y, w, h);
-    ctx.font = '18px serif';
+  // Wall paintings (left + right, at two depths)
+  [[0.35, 'left'], [0.65, 'left'], [0.35, 'right'], [0.65, 'right']].forEach(([t, side]) => {
+    const wallCenterX = side === 'left'
+      ? t * VPX * 0.7
+      : W - t * (W - VPX) * 0.7;
+    const wallY = VPY + (PLAY_Y - VPY) * (t * 0.5 + 0.15);
+    const sz = 14 + t * 22;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(wallCenterX - sz / 2, wallY - sz * 0.6, sz, sz * 0.8);
+    ctx.font = Math.round(sz * 0.55) + 'px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.globalAlpha = 0.6;
-    ctx.fillText('\u{1F415}', x + w / 2, y + h / 2);
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#fff';
+    ctx.fillText('\u{1F415}', wallCenterX, wallY - sz * 0.2);
+    ctx.restore();
   });
+
+  // ---- Floor ----
+  const fGrad = ctx.createLinearGradient(0, VPY, 0, H);
+  fGrad.addColorStop(0, '#1E0E08');
+  fGrad.addColorStop(1, '#0A0503');
+  ctx.fillStyle = fGrad;
+  ctx.fillRect(0, VPY, W, H - VPY);
+
+  // Lane bounds at bottom: 0, W*0.33, W*0.67, W — all converge to VPX
+  const BOUNDS_B = [0, W * 0.33, W * 0.67, W];
+
+  // Active lane highlight
+  ctx.save();
+  ctx.fillStyle = 'rgba(241,196,15,0.07)';
+  ctx.beginPath();
+  ctx.moveTo(VPX, VPY);
+  ctx.lineTo(BOUNDS_B[activeLane], H);
+  ctx.lineTo(BOUNDS_B[activeLane + 1], H);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
+
+  // Lane divider lines (perspective)
+  ctx.strokeStyle = 'rgba(241,196,15,0.25)';
+  ctx.lineWidth = 1.5;
+  BOUNDS_B.forEach(bx => {
+    ctx.beginPath(); ctx.moveTo(VPX, VPY); ctx.lineTo(bx, H); ctx.stroke();
+  });
+
+  // Scrolling horizontal floor lines (motion sense)
+  const NLINES = 14;
+  for (let i = 0; i < NLINES; i++) {
+    const t = ((i / NLINES) + scroll) % 1;
+    if (t < 0.01) continue;
+    const lineY = VPY + (H - VPY) * t;
+    const lw0 = 0, lw1 = W * t;
+    const lx = VPX - lw1 / 2;
+    const rx = VPX + lw1 / 2;
+    ctx.strokeStyle = 'rgba(200,130,70,' + (t * 0.18) + ')';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(Math.max(0, lx), lineY); ctx.lineTo(Math.min(W, rx), lineY); ctx.stroke();
+  }
+
+  // Ceiling perspective lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 1;
+  BOUNDS_B.forEach(bx => {
+    ctx.beginPath(); ctx.moveTo(VPX, VPY); ctx.lineTo(bx, 0); ctx.stroke();
+  });
 }
 
 function onRunnerTouchStart(e) { runnerTouchX = e.touches[0].clientX; }
