@@ -179,7 +179,7 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
 <!-- ===================== S-02: LOBBY ===================== -->
 <section id="screen-lobby">
   <div class="logo" style="margin-bottom:4px;">PRISN<span style="color:var(--gold);">ESCAPE</span></div>
-  <div class="badge badge-gold" id="lobby-code">MAUS</div>
+  <div class="badge badge-gold" id="lobby-code" ontouchstart="hostLongPressStart()" ontouchend="hostLongPressEnd()" onmousedown="hostLongPressStart()" onmouseup="hostLongPressEnd()" onmouseleave="hostLongPressEnd()" style="cursor:default;user-select:none;">MAUS</div>
   <p class="lobby-count" id="lobby-count">0 van 7 aanwezig</p>
   <div class="lobby-players" id="lobby-players"></div>
   <p class="waiting-text" style="margin-top:16px;">Wachten op de host&#8230;</p>
@@ -350,6 +350,9 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
   <div style="font-size:36px;">&#9203;</div>
   <p style="font-weight:700;font-size:16px;" id="waiting-text">Wachten op volgende fase...</p>
 </div>
+
+<!-- ===================== HOST FAB ===================== -->
+<button id="host-fab" onclick="openHostQM()" style="display:none;position:fixed;bottom:80px;right:16px;width:48px;height:48px;border-radius:50%;background:var(--purple);border:none;font-size:20px;color:#fff;z-index:700;box-shadow:0 4px 16px rgba(139,92,246,.5);cursor:pointer;">&#127918;</button>
 
 <!-- ===================== TOAST ===================== -->
 <div id="toast"></div>
@@ -1549,11 +1552,24 @@ function closeConfirm() {
   document.getElementById('host-confirm').classList.remove('active');
 }
 
+function openHostQM() {
+  if (!isHost) return;
+  updateQMStatus();
+  document.getElementById('host-qm').classList.add('active');
+}
+
+function showHostFab() {
+  document.getElementById('host-fab').style.display = 'flex';
+  document.getElementById('host-fab').style.alignItems = 'center';
+  document.getElementById('host-fab').style.justifyContent = 'center';
+}
+
 async function doHostLogin() {
   const pw = document.getElementById('host-pw').value;
   if (pw !== CONFIG.HOST_WACHTWOORD) { showToast('Verkeerd wachtwoord!'); return; }
   isHost = true;
   closeHostLogin();
+  showHostFab();
 
   // Ensure room exists
   if (!roomId) {
