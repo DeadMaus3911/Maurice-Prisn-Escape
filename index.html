@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Maurice Prisn Escape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;}
+:root{
+  --bg:#0D0D2B;--bg2:#161630;--bg3:#1E1E40;--bg-self:#2D1B4A;
+  --gold:#F1C40F;--purple:#8B5CF6;--green:#22C55E;--red:#EF4444;--amber:#F59E0B;
+  --text:#FFFFFF;--text2:#A0A0C0;--border:#2A2A5A;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;}
+section{display:none;flex-direction:column;align-items:center;width:100%;height:100vh;overflow-y:auto;overflow-x:hidden;background:var(--bg);padding:24px 16px 32px;}
+section.active{display:flex;}
+h1{font-family:'Syne',sans-serif;font-weight:800;}
+h2{font-family:'Syne',sans-serif;font-weight:800;}
+
+/* ---- BUTTONS ---- */
+.btn{display:flex;align-items:center;justify-content:center;width:100%;max-width:340px;height:56px;border-radius:28px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:1px;transition:opacity .15s,transform .1s;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--gold);color:#0D0D2B;box-shadow:0 4px 20px rgba(241,196,15,.35);}
+.btn-primary:disabled{opacity:.4;cursor:default;}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1.5px solid var(--border);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-purple{background:var(--purple);color:#fff;}
+.btn-sm{height:44px;font-size:14px;max-width:160px;border-radius:22px;}
+
+/* ---- BADGES ---- */
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:5px 14px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
+.badge-runner{background:var(--amber);color:#0D0D2B;}
+.badge-match{background:var(--purple);color:#fff;}
+.badge-solo{background:var(--green);color:#fff;}
+.badge-race{background:var(--red);color:#fff;}
+.badge-gold{background:var(--gold);color:#0D0D2B;font-size:18px;font-weight:900;padding:8px 20px;border-radius:16px;letter-spacing:2px;}
+
+/* ---- INPUTS ---- */
+.input{width:100%;max-width:340px;height:52px;border-radius:16px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-family:'Nunito',sans-serif;font-size:16px;font-weight:600;padding:0 16px;outline:none;}
+.input:focus{border-color:var(--gold);}
+.input[readonly]{opacity:.5;}
+label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-self:flex-start;width:100%;max-width:340px;}
+
+/* ---- LOGO ---- */
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;letter-spacing:2px;text-align:center;line-height:1.1;user-select:none;}
+.logo span{color:var(--gold);}
+.logo-sub{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:4px;text-transform:uppercase;margin-top:4px;}
+
+/* ---- TIMER SVG ---- */
+.timer-wrap{position:relative;width:56px;height:56px;flex-shrink:0;}
+.timer-wrap svg{transform:rotate(-90deg);}
+.timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;}
+
+/* ---- TOAST ---- */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1E1E40;border:1px solid var(--border);border-radius:24px;padding:12px 24px;font-weight:700;font-size:14px;opacity:0;transition:opacity .3s;z-index:9999;white-space:nowrap;pointer-events:none;}
+#toast.show{opacity:1;}
+
+/* ---- LEADERBOARD ---- */
+.lb-row{display:flex;align-items:center;gap:10px;width:100%;max-width:340px;padding:10px 14px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);margin-bottom:6px;}
+.lb-row.gold{background:rgba(241,196,15,.12);border-color:var(--gold);}
+.lb-row.self{background:var(--bg-self);border-color:var(--purple);}
+.lb-rank{font-size:18px;width:28px;text-align:center;}
+.lb-avatar{font-size:22px;}
+.lb-name{flex:1;font-weight:700;font-size:14px;}
+.lb-score{font-family:'Nunito',sans-serif;font-weight:900;font-size:16px;color:var(--gold);}
+.lb-arrow{font-size:12px;width:16px;text-align:center;}
+
+/* ---- AVATAR GRID ---- */
+.avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:340px;margin:8px 0;}
+.avatar-btn{height:56px;border-radius:14px;border:2px solid var(--border);background:var(--bg2);font-size:24px;cursor:pointer;transition:border-color .15s,background .15s;}
+.avatar-btn.selected{border-color:var(--gold);background:rgba(241,196,15,.15);}
+
+/* ---- SCREEN: JOIN ---- */
+#screen-join{justify-content:flex-start;padding-top:40px;gap:12px;}
+
+/* ---- SCREEN: LOBBY ---- */
+#screen-lobby{justify-content:flex-start;padding-top:32px;gap:12px;}
+.lobby-count{font-size:13px;color:var(--text2);font-weight:600;}
+.lobby-players{width:100%;max-width:340px;}
+.lobby-player{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);margin-bottom:6px;}
+.waiting-text{font-size:14px;color:var(--text2);font-weight:600;animation:pulse 1.8s ease-in-out infinite;}
+
+/* ---- SCREEN: INTRO ---- */
+#screen-intro{justify-content:center;gap:20px;}
+.intro-card{width:100%;max-width:340px;padding:14px 16px;border-radius:16px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;gap:14px;}
+.intro-icon{font-size:32px;}
+.intro-text h3{font-size:15px;font-weight:800;}
+.intro-text p{font-size:12px;color:var(--text2);font-weight:600;margin-top:2px;}
+.countdown-num{font-family:'Syne',sans-serif;font-weight:800;font-size:80px;color:var(--gold);text-align:center;line-height:1;}
+
+/* ---- SCREEN: RUNNER ---- */
+#screen-runner{padding:12px 16px;gap:8px;}
+.runner-header{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:360px;}
+.runner-score{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;color:var(--gold);}
+#runner-canvas{border-radius:16px;display:block;touch-action:none;}
+.runner-controls{display:flex;gap:12px;width:100%;max-width:360px;margin-top:4px;}
+.runner-controls .btn{max-width:none;flex:1;height:52px;font-size:22px;}
+
+/* ---- SCREEN: TRIVIA ---- */
+#screen-trivia{justify-content:flex-start;padding-top:20px;gap:12px;}
+.trivia-header{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:340px;}
+.question-box{width:100%;max-width:340px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;font-size:15px;font-weight:700;line-height:1.5;min-height:80px;}
+.answers-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:340px;}
+.ans-btn{height:72px;border-radius:14px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text);font-family:'Nunito',sans-serif;font-weight:600;font-size:13px;padding:8px;cursor:pointer;display:flex;align-items:center;gap:8px;text-align:left;transition:border-color .15s,background .15s;}
+.ans-btn:active{transform:scale(0.97);}
+.ans-btn .ans-letter{width:28px;height:28px;border-radius:50%;background:var(--gold);color:#0D0D2B;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ans-btn.correct{background:rgba(34,197,94,.2);border-color:var(--green);}
+.ans-btn.wrong{background:rgba(239,68,68,.15);border-color:var(--red);animation:shake .4s;}
+.ans-btn.reveal-correct{background:rgba(34,197,94,.2);border-color:var(--green);}
+.ans-btn:disabled{cursor:default;}
+.score-float{position:fixed;font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;color:var(--gold);pointer-events:none;animation:floatUp .9s forwards;z-index:500;}
+
+/* ---- SCREEN: MATCH-3 ---- */
+#screen-match3{padding:12px 16px;gap:8px;}
+.match-header{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:360px;}
+.match-score{font-family:'Nunito',sans-serif;font-weight:900;font-size:22px;color:var(--purple);}
+#match-canvas{border-radius:16px;display:block;touch-action:none;}
+.combo-text{height:28px;font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;color:var(--gold);text-align:center;}
+
+/* ---- SCREEN: TUSSENSTAND ---- */
+#screen-stand{justify-content:flex-start;padding-top:24px;gap:10px;}
+
+/* ---- SCREEN: END 1 ---- */
+#screen-end1{justify-content:center;gap:16px;text-align:center;}
+.trophy{font-size:80px;animation:tropBounce .5s ease-in-out infinite alternate;}
+.end-title{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--gold);}
+
+/* ---- SCREEN: END 2 ---- */
+#screen-end2{justify-content:center;gap:16px;text-align:center;}
+.msg-card{width:100%;max-width:340px;padding:24px;border-radius:20px;background:linear-gradient(135deg,rgba(241,196,15,.2),rgba(241,196,15,.05));border:1.5px solid var(--gold);text-align:left;display:none;}
+.msg-card.show{display:block;}
+.msg-text{font-size:16px;font-weight:600;line-height:1.7;color:var(--text);}
+
+/* ---- HOST OVERLAYS ---- */
+.host-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:800;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;gap:14px;}
+.host-overlay.active{display:flex;}
+.host-box{width:100%;max-width:360px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:10px;}
+.host-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:4px;}
+.host-phase{font-size:13px;color:var(--text2);font-weight:600;}
+.host-close{position:absolute;top:20px;right:20px;background:var(--bg3);border:none;color:var(--text);font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;}
+
+/* ---- WAITING OVERLAY ---- */
+#waiting-overlay{display:none;position:fixed;inset:0;background:rgba(13,13,43,.92);z-index:600;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+#waiting-overlay.active{display:flex;}
+
+/* ---- ANIMATIONS ---- */
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-80px) scale(1.3)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes tropBounce{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes comboFlash{0%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(1)}}
+@keyframes countdown{0%{transform:scale(1.2);opacity:1}80%{opacity:1}100%{opacity:0;transform:scale(.8)}}
+</style>
+</head>
+<body>
+
+<!-- ===================== S-01: JOIN ===================== -->
+<section id="screen-join">
+  <div id="join-logo" style="margin-bottom:8px;cursor:default;" ontouchstart="hostLongPressStart()" ontouchend="hostLongPressEnd()" onmousedown="hostLongPressStart()" onmouseup="hostLongPressEnd()" onmouseleave="hostLongPressEnd()">
+    <div class="logo">PRISN<span>ESCAPE</span></div>
+    <div class="logo-sub">Het afscheidsspel van Maurice</div>
+  </div>
+  <div style="height:4px;width:60px;background:var(--gold);border-radius:2px;margin:4px 0 12px;"></div>
+  <label for="join-name">Jouw naam</label>
+  <input id="join-name" class="input" type="text" placeholder="Bijv. Laura" maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
+  <label style="margin-top:8px;">Kies je avatar</label>
+  <div class="avatar-grid" id="avatar-grid"></div>
+  <label style="margin-top:8px;">Spelcode</label>
+  <input id="join-code" class="input" type="text" value="MAUS" readonly>
+  <div style="height:12px;"></div>
+  <button class="btn btn-primary" id="join-btn" onclick="doJoin()">Doe mee! 🚀</button>
+  <p style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center;">Druk 1,5 sec op het logo voor host-toegang</p>
+</section>
+
+<!-- ===================== S-02: LOBBY ===================== -->
+<section id="screen-lobby">
+  <div class="logo" style="margin-bottom:4px;">PRISN<span style="color:var(--gold);">ESCAPE</span></div>
+  <div class="badge badge-gold" id="lobby-code">MAUS</div>
+  <p class="lobby-count" id="lobby-count">0 van 7 aanwezig</p>
+  <div class="lobby-players" id="lobby-players"></div>
+  <p class="waiting-text" style="margin-top:16px;">Wachten op de host&#8230;</p>
+</section>
+
+<!-- ===================== S-02b: INTRO ===================== -->
+<section id="screen-intro">
+  <h2 style="font-size:22px;margin-bottom:4px;">Hoe werkt het?</h2>
+  <p style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:8px;">3 rondetypen, 6 blokken</p>
+  <div class="intro-card">
+    <div class="intro-icon">&#127939;</div>
+    <div class="intro-text"><h3>Runner</h3><p>Ontwijkt obstakels, pak sterren. 30 seconden.</p></div>
+  </div>
+  <div class="intro-card">
+    <div class="intro-icon">&#10067;</div>
+    <div class="intro-text"><h3>Trivia</h3><p>2 vragen per blok. SOLO of RACE-modus.</p></div>
+  </div>
+  <div class="intro-card">
+    <div class="intro-icon">&#127851;</div>
+    <div class="intro-text"><h3>Match-3</h3><p>Maak combinaties van 3+. 45 seconden.</p></div>
+  </div>
+  <div id="intro-countdown" style="display:none;flex-direction:column;align-items:center;gap:4px;margin-top:12px;">
+    <p style="font-size:13px;color:var(--text2);font-weight:600;">Blok 1 start over</p>
+    <div class="countdown-num" id="intro-num">3</div>
+  </div>
+</section>
+
+<!-- ===================== S-03: RUNNER ===================== -->
+<section id="screen-runner">
+  <div class="runner-header">
+    <span class="badge badge-runner">&#127939; Runner</span>
+    <span class="runner-score" id="runner-score-display">0</span>
+    <div class="timer-wrap" id="runner-timer-wrap">
+      <svg width="56" height="56" viewBox="0 0 56 56">
+        <circle cx="28" cy="28" r="24" fill="none" stroke="#2A2A5A" stroke-width="4"/>
+        <circle id="runner-timer-arc" cx="28" cy="28" r="24" fill="none" stroke="#F1C40F" stroke-width="4" stroke-dasharray="150.8" stroke-dashoffset="0" stroke-linecap="round"/>
+      </svg>
+      <div class="timer-num" id="runner-timer-num">30</div>
+    </div>
+  </div>
+  <canvas id="runner-canvas" width="340" height="400"></canvas>
+  <div class="runner-controls">
+    <button class="btn btn-secondary" id="runner-left" ontouchstart="runnerMove(-1)" onmousedown="runnerMove(-1)">&#8592;</button>
+    <button class="btn btn-secondary" id="runner-right" ontouchstart="runnerMove(1)" onmousedown="runnerMove(1)">&#8594;</button>
+  </div>
+</section>
+
+<!-- ===================== S-04: TRIVIA ===================== -->
+<section id="screen-trivia">
+  <div class="trivia-header">
+    <span class="badge" id="trivia-badge">SOLO</span>
+    <span style="font-size:13px;color:var(--text2);font-weight:700;" id="trivia-progress">Vraag 1/2</span>
+    <div class="timer-wrap">
+      <svg width="56" height="56" viewBox="0 0 56 56">
+        <circle cx="28" cy="28" r="24" fill="none" stroke="#2A2A5A" stroke-width="4"/>
+        <circle id="trivia-timer-arc" cx="28" cy="28" r="24" fill="none" stroke="#22C55E" stroke-width="4" stroke-dasharray="150.8" stroke-dashoffset="0" stroke-linecap="round"/>
+      </svg>
+      <div class="timer-num" id="trivia-timer-num">20</div>
+    </div>
+  </div>
+  <div class="question-box" id="trivia-question"></div>
+  <div class="answers-grid" id="answers-grid"></div>
+  <div id="trivia-feedback" style="height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;"></div>
+</section>
+
+<!-- ===================== S-05: MATCH-3 ===================== -->
+<section id="screen-match3">
+  <div class="match-header">
+    <span class="badge badge-match">&#127851; Match-3</span>
+    <span class="match-score" id="match-score-display">0</span>
+    <div class="timer-wrap">
+      <svg width="56" height="56" viewBox="0 0 56 56">
+        <circle cx="28" cy="28" r="24" fill="none" stroke="#2A2A5A" stroke-width="4"/>
+        <circle id="match-timer-arc" cx="28" cy="28" r="24" fill="none" stroke="#8B5CF6" stroke-width="4" stroke-dasharray="150.8" stroke-dashoffset="0" stroke-linecap="round"/>
+      </svg>
+      <div class="timer-num" id="match-timer-num">45</div>
+    </div>
+  </div>
+  <canvas id="match-canvas" width="336" height="336"></canvas>
+  <div class="combo-text" id="combo-text"></div>
+</section>
+
+<!-- ===================== S-06: TUSSENSTAND ===================== -->
+<section id="screen-stand">
+  <h2 style="margin-bottom:4px;font-size:22px;">Tussenstand</h2>
+  <p style="font-size:13px;color:var(--text2);font-weight:600;" id="stand-block">Na blok 1</p>
+  <div id="stand-lb" style="width:100%;max-width:340px;margin-top:8px;"></div>
+  <p style="font-size:12px;color:var(--text2);margin-top:12px;font-weight:600;" id="stand-next">Volgende blok start zo...</p>
+</section>
+
+<!-- ===================== S-11: EINDSCHERM 1 ===================== -->
+<section id="screen-end1">
+  <div class="trophy">&#127942;</div>
+  <div class="end-title">ONTSNAPPING GESLAAGD!</div>
+  <p style="font-size:14px;color:var(--text2);font-weight:600;">Eindstand</p>
+  <div id="end-lb" style="width:100%;max-width:340px;"></div>
+  <button class="btn btn-primary" style="margin-top:16px;" onclick="showScreen('screen-end2')">Jouw persoonlijk bericht &#128140;</button>
+</section>
+
+<!-- ===================== S-12: EINDSCHERM 2 ===================== -->
+<section id="screen-end2">
+  <div style="font-size:48px;margin-bottom:8px;">&#128140;</div>
+  <h2 style="font-size:22px;margin-bottom:4px;">Een bericht van Maurice</h2>
+  <p style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:16px;" id="end2-name"></p>
+  <div class="msg-card" id="msg-card">
+    <p class="msg-text" id="msg-text"></p>
+  </div>
+  <button class="btn btn-primary" id="open-msg-btn" onclick="openPersonalMessage()" style="max-width:340px;">Open je persoonlijk bericht &#128140;</button>
+  <button class="btn btn-secondary" style="margin-top:10px;" onclick="showScreen('screen-end1')">&#8592; Terug naar eindstand</button>
+</section>
+
+<!-- ===================== S-13: FALLBACK ===================== -->
+<section id="screen-fallback">
+  <div style="font-size:48px;margin-bottom:16px;">&#128591;</div>
+  <h2 style="font-size:22px;margin-bottom:8px;text-align:center;">Speciaal voor jou</h2>
+  <div class="msg-card show" style="display:block;">
+    <p class="msg-text" id="fallback-text"></p>
+  </div>
+</section>
+
+<!-- ===================== H-01: HOST LOGIN ===================== -->
+<div class="host-overlay" id="host-login">
+  <div class="host-box">
+    <div class="host-title">&#128272; Host-toegang</div>
+    <label for="host-pw">Wachtwoord</label>
+    <input id="host-pw" class="input" type="password" placeholder="Wachtwoord..." autocomplete="off">
+    <button class="btn btn-primary" onclick="doHostLogin()">Inloggen</button>
+    <button class="btn btn-secondary btn-sm" style="margin-top:4px;" onclick="closeHostLogin()">Annuleren</button>
+  </div>
+</div>
+
+<!-- ===================== H-02: HOST DASHBOARD ===================== -->
+<div class="host-overlay" id="host-dashboard">
+  <div class="host-box" style="position:relative;">
+    <button class="host-close" onclick="closeHostPanel()">&times;</button>
+    <div class="host-title">&#127918; Host Dashboard</div>
+    <div class="host-phase" id="host-status-text">Status: wachten op spelers</div>
+    <div id="host-players-list" style="margin:8px 0;"></div>
+    <button class="btn btn-primary" id="host-start-btn" onclick="hostStartGame()" disabled>Start het spel &#9654;</button>
+  </div>
+</div>
+
+<!-- ===================== H-03: QUIZMASTER ===================== -->
+<div class="host-overlay" id="host-qm">
+  <div class="host-box" style="position:relative;">
+    <button class="host-close" onclick="closeHostPanel()">&times;</button>
+    <div class="host-title">&#127918; Quizmaster</div>
+    <div class="host-phase" id="host-qm-status">Blok 1 - Runner</div>
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="confirmAction('skip')">Sla ronde over &#9193;</button>
+    <button class="btn btn-danger" style="margin-top:6px;" onclick="confirmAction('finish')">Finaliseer spel &#127937;</button>
+  </div>
+</div>
+
+<!-- ===================== H-04: BEVESTIGING ===================== -->
+<div class="host-overlay" id="host-confirm">
+  <div class="host-box">
+    <div class="host-title" id="confirm-title">Weet je zeker?</div>
+    <p style="font-size:14px;color:var(--text2);font-weight:600;" id="confirm-msg"></p>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="closeConfirm()">Annuleren</button>
+      <button class="btn btn-primary" style="flex:1;" id="confirm-ok-btn">Bevestigen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== WAITING OVERLAY ===================== -->
+<div id="waiting-overlay">
+  <div style="font-size:36px;">&#9203;</div>
+  <p style="font-weight:700;font-size:16px;" id="waiting-text">Wachten op volgende fase...</p>
+</div>
+
+<!-- ===================== TOAST ===================== -->
+<div id="toast"></div>
+
+<script>
+// =============================================================
+// CONFIG & DATA
+// =============================================================
+const SUPABASE_URL  = 'VUL_HIER_IN';
+const SUPABASE_ANON = 'VUL_HIER_IN';
+
+const CONFIG = {
+  SPELCODE:               'MAUS',
+  HOST_WACHTWOORD:        'afscheid2026',
+  MAX_NAAM_TEKENS:        20,
+  STANDAARD_AVATAR:       '\u{1F98A}',
+  AANTAL_BLOKKEN:         6,
+  RUNNER_DUUR:            30,
+  MATCH3_DUUR:            45,
+  TRIVIA_SOLO_DUUR:       20,
+  TRIVIA_RACE_DUUR:       15,
+  TUSSENSTAND_DUUR:       4,
+  RUNNER_LANES:           3,
+  RUNNER_SNELHEID_START:  3.5,
+  RUNNER_SNELHEID_MAX:    7.0,
+  RUNNER_SPAWN_FRAMES:    55,
+  RUNNER_BASEPUNTEN:      1,
+  STER_PUNTEN:            20,
+  TRIVIA_SOLO_PUNTEN:     100,
+  TRIVIA_RACE_EERSTE:     200,
+  TRIVIA_RACE_DAARNA:     100,
+  MATCH3_DRIE:            50,
+  MATCH3_VIER:            150,
+  MATCH3_VIJFPLUS:        300,
+  MATCH3_RIJEN:           6,
+  MATCH3_KOLOMMEN:        6,
+  TEGEL_PX:               56,
+};
+
+const AVATARS = ['\u{1F98A}','\u{1F436}','\u{1F431}','\u{1F43B}','\u{1F981}','\u{1F43C}','\u{1F99D}','\u{1F984}','\u{1F438}','\u{1F427}','\u{1F98B}','\u{1F43A}'];
+
+const OBSTACLES = [
+  { emoji: '\u{1F415}', label: 'Hond',        pts: -50 },
+  { emoji: '\u{1F4C4}', label: 'A4 vel',      pts: -30 },
+  { emoji: '\u{1F392}', label: 'Brokzak',     pts: -40 },
+  { emoji: '\u2615',    label: 'Koffie',       pts: -20 },
+];
+
+const TILES   = ['\u{1F963}','\u{1F5B1}','\u2615','\u{1F43E}','\u{1F9B4}','\u{1F415}'];
+const TCOLORS = ['#F59E0B','#8B5CF6','#EF4444','#22C55E','#3B82F6','#F1C40F'];
+
+const QUESTIONS = [
+  { q:'Hoeveel jaar werkte Maurice bij Prins Petfoods?', type:'solo', timer:20, opts:['3,5 jaar','5,5 jaar','7 jaar','4 jaar'], correct:1 },
+  { q:'Wie zaten er in het CCT-team toen Maurice begon?', type:'solo', timer:20, opts:['Martijn, Robert, Elsemieke, Bas, Pieter en Laura','Robert, Laura, Niels, Arjan en Iris','Bas, Patricia, Lieke, Peter en Romy','Pieter, Elsemieke, Desi, Amber en Anna'], correct:0 },
+  { q:'Met welk bedrijfsuitje is Maurice wel meegeweest?', type:'race', timer:15, opts:['Kwintelooijen House of Bird','Padellen','Strandtent bij Lelystad','Kerstfeest 2025'], correct:0 },
+  { q:'Hoeveel blikjes passen in de Toonbank display die Maurice ontwierp?', type:'solo', timer:20, opts:['35','42','49','56'], correct:1 },
+  { q:'Wat draagt Maurice op zijn Teams-profielfoto?', type:'solo', timer:20, opts:['Gele trui, voor de oude scheidingswanden','Wit overhemd, in een dierenspeciaalzaak','Roze overhemd, bij de groene magneetborden','Blauwe trui, in de brainstorm-ruimte'], correct:0 },
+  { q:'Hoeveel collega\'s vertrokken tijdens Maurice\'s tijd (buitendienst niet meegerekend)?', type:'race', timer:15, opts:['Minimaal 8','Minimaal 12','Minimaal 5','Minimaal 15'], correct:1 },
+  { q:'Wat was de slechtste kersttrui die Maurice droeg?', type:'solo', timer:20, opts:['Een onesie','Een trui met lichtjes en muziek','Een opblaasbare rendiertrui','Een zelfgebreide trui van zijn oma'], correct:0 },
+  { q:'Hoeveel stagiaires begeleidde Maurice bij Prins?', type:'solo', timer:20, opts:['3','5','7','11'], correct:2 },
+];
+
+const BLOCK_TRIVIA = [[0,1],[2,3],[4,5],[6,7],[0,2],[4,6]];
+
+const MESSAGES = {
+  'Robert':  'Beste Robert, jij was de rustige rots in de branding. Dank voor alles.',
+  'Laura E': 'Lieve Laura, jouw energie maakte elke dag lichter. Blijf stralen!',
+  'Laura V': 'Lieve Laura, jij weet altijd de juiste woorden te vinden. Dankjewel.',
+  'Esther':  'Beste Esther, zonder jou draait de afdeling niet. Dat weet iedereen.',
+  'Arjan':   'Beste Arjan, jij maakt van elk project iets beter. Respect.',
+  'Niels':   'Hey Niels, jij bent de stilste kracht. Bedankt voor alle goede gesprekken.',
+  'Iris':    'Lieve Iris, jij brengt altijd een lach mee. Dat ga ik het meest missen.',
+};
+const FALLBACK_BERICHT = 'Maurice heeft iets bijzonders voor je achtergelaten. \u{1F49B}';
+
+// =============================================================
+// STATE
+// =============================================================
+let sb = null;
+let roomId = null;
+let playerId = null;
+let playerName = '';
+let playerAvatar = AVATARS[0];
+let playerScore = 0;
+let isHost = false;
+let syncChannel = null;
+let selectedAvatar = 0;
+
+let currentBlock = 0;
+let currentPhase = 'runner';
+let currentTriviaQ = 0;
+let blockScore = 0;
+
+// Runner
+let runnerRAF = null;
+let runnerIntervalId = null;
+let runnerScore = 0;
+let runnerTime = CONFIG.RUNNER_DUUR;
+let runnerLane = 1;
+let runnerObjs = [];
+let runnerStars = [];
+let runnerFrame = 0;
+let runnerDone = false;
+let runnerTouchX = null;
+
+// Trivia
+let triviaIntervalId = null;
+let triviaTimeLeft = 0;
+let triviaAnswered = false;
+let triviaQScore = 0;
+let raceFirstAnswered = false;
+
+// Match-3
+let matchBoard = [];
+let matchSel = null;
+let matchAnimating = false;
+let matchRAF = null;
+let matchIntervalId = null;
+let matchScore = 0;
+let matchTime = CONFIG.MATCH3_DUUR;
+let matchDone = false;
+let matchCombo = '';
+let matchComboAlpha = 0;
+
+// Previous leaderboard for arrows
+let prevRanks = {};
+
+// Long-press host
+let hostPressTimer = null;
+
+// =============================================================
+// INIT
+// =============================================================
+window.addEventListener('load', async () => {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  buildAvatarGrid();
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code') || '';
+  if (code) document.getElementById('join-code').value = code.toUpperCase();
+  setupKeyboard();
+  showScreen('screen-join');
+});
+
+// =============================================================
+// SCREEN MANAGEMENT
+// =============================================================
+function showScreen(id) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+// =============================================================
+// AVATAR GRID
+// =============================================================
+function buildAvatarGrid() {
+  const grid = document.getElementById('avatar-grid');
+  grid.innerHTML = '';
+  AVATARS.forEach((a, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'avatar-btn' + (i === 0 ? ' selected' : '');
+    btn.textContent = a;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAvatar = i;
+      playerAvatar = AVATARS[i];
+    });
+    grid.appendChild(btn);
+  });
+}
+
+// =============================================================
+// HOST LONG PRESS
+// =============================================================
+function hostLongPressStart() {
+  hostPressTimer = setTimeout(() => { showHostLogin(); }, 1500);
+}
+function hostLongPressEnd() {
+  if (hostPressTimer) { clearTimeout(hostPressTimer); hostPressTimer = null; }
+}
+function setupKeyboard() {
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'h') showHostLogin();
+    if (document.getElementById('screen-runner').classList.contains('active')) {
+      if (e.key === 'ArrowLeft') runnerMove(-1);
+      if (e.key === 'ArrowRight') runnerMove(1);
+    }
+  });
+}
+
+// =============================================================
+// TOAST
+// =============================================================
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// =============================================================
+// JOIN FLOW
+// =============================================================
+async function doJoin() {
+  const nameInput = document.getElementById('join-name');
+  const name = nameInput.value.trim();
+  if (!name) { showToast('Vul je naam in! \u{1F64F}'); return; }
+
+  const btn = document.getElementById('join-btn');
+  btn.disabled = true; btn.textContent = 'Even wachten...';
+
+  try {
+    // Find room
+    const { data: rooms, error: re } = await sb.from('rooms').select('*').eq('code', CONFIG.SPELCODE).limit(1);
+    if (re || !rooms || rooms.length === 0) {
+      showToast('Spelcode niet gevonden!'); btn.disabled = false; btn.textContent = 'Doe mee! \u{1F680}'; return;
+    }
+    const room = rooms[0];
+    if (room.status === 'victory') {
+      showToast('Dit spel is al afgelopen!'); btn.disabled = false; btn.textContent = 'Doe mee! \u{1F680}'; return;
+    }
+    if (room.status === 'playing') {
+      showToast('Het spel is al begonnen'); // still allow join, score starts 0
+    }
+
+    roomId = room.id;
+    currentBlock = room.current_block || 0;
+    currentPhase = room.current_phase || 'runner';
+    playerName = name;
+    playerAvatar = AVATARS[selectedAvatar];
+
+    // Insert player
+    const { data: pd, error: pe } = await sb.from('players').insert({
+      room_id: roomId, name: playerName, avatar: playerAvatar, score: 0
+    }).select().single();
+    if (pe) { showToast('Fout bij aanmelden: ' + pe.message); btn.disabled = false; btn.textContent = 'Doe mee! \u{1F680}'; return; }
+
+    playerId = pd.id;
+    playerScore = 0;
+
+    // Subscribe to realtime
+    subscribeToRoom();
+
+    // Show lobby
+    showScreen('screen-lobby');
+    await updateLobby();
+
+    // If game already playing, jump into current phase
+    if (room.status === 'playing') {
+      setTimeout(() => startPhase(currentBlock, currentPhase), 500);
+    }
+
+  } catch(err) {
+    showToast('Verbindingsfout!');
+    btn.disabled = false; btn.textContent = 'Doe mee! \u{1F680}';
+  }
+}
+
+// =============================================================
+// REALTIME SUBSCRIPTION
+// =============================================================
+function subscribeToRoom() {
+  if (syncChannel) { sb.removeChannel(syncChannel); syncChannel = null; }
+  syncChannel = sb.channel('room-' + roomId)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'id=eq.' + roomId }, (payload) => {
+      handleRoomUpdate(payload.new);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: 'room_id=eq.' + roomId }, () => {
+      updateLobby();
+      if (document.getElementById('screen-stand').classList.contains('active')) loadLeaderboard('stand-lb');
+    })
+    .on('broadcast', { event: 'trivia_race' }, (payload) => {
+      handleRaceAnswer(payload.payload);
+    })
+    .subscribe();
+}
+
+function handleRoomUpdate(room) {
+  if (room.status === 'victory') {
+    stopAllGames();
+    loadLeaderboard('end-lb');
+    showScreen('screen-end1');
+    return;
+  }
+  if (room.status === 'playing') {
+    const newBlock = room.current_block;
+    const newPhase = room.current_phase;
+    if (newBlock !== currentBlock || newPhase !== currentPhase) {
+      currentBlock = newBlock;
+      currentPhase = newPhase;
+      currentTriviaQ = 0;
+      startPhase(currentBlock, currentPhase);
+    }
+  }
+}
+
+// =============================================================
+// LOBBY
+// =============================================================
+async function updateLobby() {
+  if (!roomId) return;
+  const { data } = await sb.from('players').select('*').eq('room_id', roomId).order('joined_at');
+  if (!data) return;
+  const list = document.getElementById('lobby-players');
+  const count = document.getElementById('lobby-count');
+  if (count) count.textContent = data.length + ' van 7 aanwezig';
+  if (list) {
+    list.innerHTML = '';
+    data.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'lobby-player';
+      row.innerHTML = '<span style="font-size:22px;">' + p.avatar + '</span>' +
+        '<span style="font-weight:700;font-size:14px;">' + escHtml(p.name) + '</span>' +
+        (p.id === playerId ? '<span style="font-size:12px;color:var(--gold);font-weight:700;">Jij</span>' : '');
+      list.appendChild(row);
+    });
+  }
+  // Host dashboard
+  const hpl = document.getElementById('host-players-list');
+  const startBtn = document.getElementById('host-start-btn');
+  if (hpl) {
+    hpl.innerHTML = '<p style="font-size:13px;color:var(--text2);font-weight:600;">' + data.length + ' van 7 aanwezig</p>';
+  }
+  if (startBtn) startBtn.disabled = data.length === 0;
+}
+
+// =============================================================
+// GAME PHASE MANAGEMENT
+// =============================================================
+function startPhase(block, phase) {
+  hideWaiting();
+  stopAllGames();
+  currentBlock = block;
+  currentPhase = phase;
+
+  if (phase === 'runner') {
+    blockScore = 0;
+    startRunner(block);
+  } else if (phase === 'trivia') {
+    currentTriviaQ = 0;
+    startTrivia(block, 0);
+  } else if (phase === 'match') {
+    startMatch3(block);
+  } else if (phase === 'stand') {
+    showStand(block);
+  }
+}
+
+function stopAllGames() {
+  // Runner
+  if (runnerRAF) { cancelAnimationFrame(runnerRAF); runnerRAF = null; }
+  if (runnerIntervalId) { clearInterval(runnerIntervalId); runnerIntervalId = null; }
+  // Trivia
+  if (triviaIntervalId) { clearInterval(triviaIntervalId); triviaIntervalId = null; }
+  // Match-3
+  if (matchRAF) { cancelAnimationFrame(matchRAF); matchRAF = null; }
+  if (matchIntervalId) { clearInterval(matchIntervalId); matchIntervalId = null; }
+}
+
+// =============================================================
+// INTRO SEQUENCE (HOST calls start, everyone sees intro)
+// =============================================================
+function playIntro() {
+  showScreen('screen-intro');
+  document.getElementById('intro-countdown').style.display = 'none';
+  setTimeout(() => {
+    const countEl = document.getElementById('intro-countdown');
+    const numEl = document.getElementById('intro-num');
+    countEl.style.display = 'flex';
+    let n = 3;
+    numEl.textContent = n;
+    const ci = setInterval(() => {
+      n--;
+      if (n <= 0) {
+        clearInterval(ci);
+        startPhase(0, 'runner');
+      } else {
+        numEl.textContent = n;
+      }
+    }, 1000);
+  }, 2500);
+}
+
+// =============================================================
+// SCORE SAVE
+// =============================================================
+async function saveScore() {
+  if (!playerId) return;
+  await sb.from('players').update({ score: playerScore }).eq('id', playerId);
+}
+
+// =============================================================
+// PHASE DONE (local) -> show waiting if not host
+// HOST advances via Supabase update
+// =============================================================
+function phaseDone(phase) {
+  saveScore();
+  if (isHost) {
+    advancePhase();
+  } else {
+    showWaiting('Wachten op de host...');
+  }
+}
+
+function showWaiting(msg) {
+  document.getElementById('waiting-text').textContent = msg || 'Wachten...';
+  document.getElementById('waiting-overlay').classList.add('active');
+}
+function hideWaiting() {
+  document.getElementById('waiting-overlay').classList.remove('active');
+}
+
+// HOST: advance to next phase
+async function advancePhase() {
+  hideWaiting();
+  let nextBlock = currentBlock;
+  let nextPhase = currentPhase;
+
+  if (currentPhase === 'runner') {
+    nextPhase = 'trivia';
+  } else if (currentPhase === 'trivia') {
+    nextPhase = 'match';
+  } else if (currentPhase === 'match') {
+    nextPhase = 'stand';
+  } else if (currentPhase === 'stand') {
+    nextBlock = currentBlock + 1;
+    if (nextBlock >= CONFIG.AANTAL_BLOKKEN) {
+      await sb.from('rooms').update({ status: 'victory', finished_at: new Date().toISOString() }).eq('id', roomId);
+      stopAllGames();
+      loadLeaderboard('end-lb');
+      showScreen('screen-end1');
+      return;
+    }
+    nextPhase = 'runner';
+  }
+
+  await sb.from('rooms').update({ current_block: nextBlock, current_phase: nextPhase }).eq('id', roomId);
+  currentBlock = nextBlock;
+  currentPhase = nextPhase;
+  startPhase(nextBlock, nextPhase);
+}
+
+// =============================================================
+// RUNNER GAME
+// =============================================================
+function startRunner(block) {
+  showScreen('screen-runner');
+  runnerScore = 0;
+  runnerTime = CONFIG.RUNNER_DUUR;
+  runnerLane = 1;
+  runnerObjs = [];
+  runnerStars = [];
+  runnerFrame = 0;
+  runnerDone = false;
+
+  const canvas = document.getElementById('runner-canvas');
+  const W = canvas.width, H = canvas.height;
+  const laneX = [W * 0.18, W * 0.5, W * 0.82];
+
+  document.getElementById('runner-score-display').textContent = '0';
+  updateRunnerTimer(CONFIG.RUNNER_DUUR);
+
+  // Swipe
+  runnerTouchX = null;
+  canvas.addEventListener('touchstart', onRunnerTouchStart, { passive: true });
+  canvas.addEventListener('touchend', onRunnerTouchEnd, { passive: true });
+
+  // Timer
+  runnerIntervalId = setInterval(() => {
+    runnerTime--;
+    updateRunnerTimer(runnerTime);
+    if (runnerTime <= 0) {
+      clearInterval(runnerIntervalId); runnerIntervalId = null;
+      runnerDone = true;
+    }
+  }, 1000);
+
+  const ctx = canvas.getContext('2d');
+
+  function loop() {
+    if (!runnerDone) runnerRAF = requestAnimationFrame(loop);
+
+    ctx.clearRect(0, 0, W, H);
+    drawRunnerBg(ctx, W, H);
+
+    const speed = CONFIG.RUNNER_SNELHEID_START +
+      (CONFIG.RUNNER_SNELHEID_MAX - CONFIG.RUNNER_SNELHEID_START) *
+      ((CONFIG.RUNNER_DUUR - runnerTime) / CONFIG.RUNNER_DUUR);
+
+    runnerFrame++;
+    if (!runnerDone) runnerScore = Math.max(0, runnerScore + CONFIG.RUNNER_BASEPUNTEN);
+
+    // Spawn obstacles
+    if (runnerFrame % CONFIG.RUNNER_SPAWN_FRAMES === 0) {
+      const lane = Math.floor(Math.random() * 3);
+      const ob = OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)];
+      runnerObjs.push({ x: laneX[lane], y: -30, lane, emoji: ob.emoji, pts: ob.pts });
+    }
+    // Spawn stars
+    if (runnerFrame % Math.floor(CONFIG.RUNNER_SPAWN_FRAMES * 1.8) === 0) {
+      const lane = Math.floor(Math.random() * 3);
+      runnerStars.push({ x: laneX[lane], y: -30, lane });
+    }
+
+    const playerX = laneX[runnerLane];
+    const playerY = H - 60;
+
+    // Update & draw obstacles
+    runnerObjs = runnerObjs.filter(o => {
+      o.y += speed;
+      ctx.font = '32px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(o.emoji, o.x, o.y);
+      if (!runnerDone && Math.abs(o.x - playerX) < 30 && Math.abs(o.y - playerY) < 38) {
+        runnerScore = Math.max(0, runnerScore + o.pts);
+        document.getElementById('runner-score-display').textContent = runnerScore;
+        return false;
+      }
+      return o.y < H + 40;
+    });
+
+    // Update & draw stars
+    runnerStars = runnerStars.filter(s => {
+      s.y += speed;
+      ctx.font = '26px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('\u2B50', s.x, s.y);
+      if (!runnerDone && Math.abs(s.x - playerX) < 22 && Math.abs(s.y - playerY) < 26) {
+        runnerScore += CONFIG.STER_PUNTEN;
+        document.getElementById('runner-score-display').textContent = runnerScore;
+        return false;
+      }
+      return s.y < H + 40;
+    });
+
+    // Draw player
+    ctx.font = '36px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('\u{1F3C3}', playerX, playerY);
+
+    document.getElementById('runner-score-display').textContent = runnerScore;
+
+    if (runnerDone) {
+      blockScore += runnerScore;
+      playerScore += runnerScore;
+      canvas.removeEventListener('touchstart', onRunnerTouchStart);
+      canvas.removeEventListener('touchend', onRunnerTouchEnd);
+      phaseDone('runner');
+    }
+  }
+  runnerRAF = requestAnimationFrame(loop);
+}
+
+function drawRunnerBg(ctx, W, H) {
+  // Ceiling
+  ctx.fillStyle = '#F5F5F0';
+  ctx.fillRect(0, 0, W, H * 0.12);
+
+  // Wall gradient
+  const wg = ctx.createLinearGradient(0, H * 0.12, 0, H * 0.57);
+  wg.addColorStop(0, '#6B2D1A');
+  wg.addColorStop(1, '#C05A38');
+  ctx.fillStyle = wg;
+  ctx.fillRect(0, H * 0.12, W, H * 0.45);
+
+  // Floor gradient
+  const fg = ctx.createLinearGradient(0, H * 0.57, 0, H);
+  fg.addColorStop(0, '#2d1608');
+  fg.addColorStop(1, '#1a0f0a');
+  ctx.fillStyle = fg;
+  ctx.fillRect(0, H * 0.57, W, H * 0.43);
+
+  // Perspective lines from vanishing point
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  const vpX = W / 2, vpY = H * 0.3;
+  for (let i = 0; i <= 5; i++) {
+    const bx = (i / 5) * W;
+    ctx.beginPath(); ctx.moveTo(vpX, vpY); ctx.lineTo(bx, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(vpX, vpY); ctx.lineTo(bx, 0); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Lane markers
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  [W * 0.33, W * 0.67].forEach(x => {
+    ctx.beginPath(); ctx.moveTo(x, H * 0.35); ctx.lineTo(x, H); ctx.stroke();
+  });
+  ctx.restore();
+
+  // TL lamp
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,250,200,0.15)';
+  ctx.fillRect(W * 0.3, 0, W * 0.4, H * 0.04);
+  ctx.fillStyle = 'rgba(255,250,180,0.08)';
+  ctx.fillRect(W * 0.1, 0, W * 0.8, H * 0.08);
+  ctx.restore();
+
+  // Wall art frames
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2;
+  [[W * 0.1, H * 0.2, 44, 36], [W * 0.72, H * 0.22, 44, 36]].forEach(([x, y, w, h]) => {
+    ctx.strokeRect(x, y, w, h);
+    ctx.font = '18px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 0.6;
+    ctx.fillText('\u{1F415}', x + w / 2, y + h / 2);
+    ctx.globalAlpha = 1;
+  });
+  ctx.restore();
+}
+
+function onRunnerTouchStart(e) { runnerTouchX = e.touches[0].clientX; }
+function onRunnerTouchEnd(e) {
+  if (runnerTouchX === null) return;
+  const dx = e.changedTouches[0].clientX - runnerTouchX;
+  if (Math.abs(dx) > 30) runnerMove(dx > 0 ? 1 : -1);
+  runnerTouchX = null;
+}
+function runnerMove(dir) {
+  runnerLane = Math.max(0, Math.min(2, runnerLane + dir));
+}
+
+function updateRunnerTimer(t) {
+  const arc = document.getElementById('runner-timer-arc');
+  const num = document.getElementById('runner-timer-num');
+  if (!arc || !num) return;
+  num.textContent = t;
+  const pct = t / CONFIG.RUNNER_DUUR;
+  arc.style.strokeDashoffset = 150.8 * (1 - pct);
+}
+
+// =============================================================
+// TRIVIA GAME
+// =============================================================
+function startTrivia(block, qIdx) {
+  showScreen('screen-trivia');
+  triviaAnswered = false;
+  triviaQScore = 0;
+  raceFirstAnswered = false;
+  currentTriviaQ = qIdx;
+
+  const qIdxGlobal = BLOCK_TRIVIA[block][qIdx];
+  const q = QUESTIONS[qIdxGlobal];
+  const isRace = (block >= 4) || (q.type === 'race');
+  const dur = isRace ? CONFIG.TRIVIA_RACE_DUUR : CONFIG.TRIVIA_SOLO_DUUR;
+
+  triviaTimeLeft = dur;
+
+  // Badge
+  const badge = document.getElementById('trivia-badge');
+  badge.className = 'badge ' + (isRace ? 'badge-race' : 'badge-solo');
+  badge.textContent = (isRace ? '\u26A1 RACE' : '\u2753 SOLO');
+
+  document.getElementById('trivia-progress').textContent = 'Vraag ' + (qIdx + 1) + '/2';
+  document.getElementById('trivia-question').textContent = q.q;
+  document.getElementById('trivia-feedback').textContent = '';
+
+  // Answers
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'ans-btn';
+    btn.innerHTML = '<span class="ans-letter">' + letters[i] + '</span><span style="font-size:12px;line-height:1.3;">' + escHtml(opt) + '</span>';
+    btn.addEventListener('click', () => submitTriviaAnswer(i, q.correct, isRace, dur));
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); submitTriviaAnswer(i, q.correct, isRace, dur); });
+    grid.appendChild(btn);
+  });
+
+  // Timer
+  updateTriviaTimer(dur, dur, isRace);
+  triviaIntervalId = setInterval(() => {
+    triviaTimeLeft--;
+    updateTriviaTimer(triviaTimeLeft, dur, isRace);
+    if (triviaTimeLeft <= 0) {
+      clearInterval(triviaIntervalId); triviaIntervalId = null;
+      if (!triviaAnswered) {
+        triviaAnswered = true;
+        revealAnswer(q.correct);
+        document.getElementById('trivia-feedback').textContent = 'Tijd is om! +0 punten';
+        setTimeout(() => nextTriviaOrPhase(block, qIdx), 1800);
+      }
+    }
+  }, 1000);
+}
+
+function submitTriviaAnswer(idx, correct, isRace, dur) {
+  if (triviaAnswered) return;
+  triviaAnswered = true;
+  if (triviaIntervalId) { clearInterval(triviaIntervalId); triviaIntervalId = null; }
+
+  const grid = document.getElementById('answers-grid');
+  const btns = grid.querySelectorAll('.ans-btn');
+  btns.forEach(b => { b.disabled = true; });
+
+  const isCorrect = idx === correct;
+  btns[idx].classList.add(isCorrect ? 'correct' : 'wrong');
+
+  let pts = 0;
+  if (isCorrect) {
+    if (isRace) {
+      // Broadcast for race
+      if (syncChannel) {
+        syncChannel.send({ type: 'broadcast', event: 'trivia_race', payload: { playerId, correct: true, ts: Date.now() } });
+      }
+      pts = raceFirstAnswered ? CONFIG.TRIVIA_RACE_DAARNA : CONFIG.TRIVIA_RACE_EERSTE;
+      raceFirstAnswered = true;
+    } else {
+      pts = CONFIG.TRIVIA_SOLO_PUNTEN;
+    }
+    revealAnswer(correct);
+    spawnScoreFloat('+' + pts);
+  } else {
+    revealAnswer(correct);
+  }
+
+  triviaQScore = pts;
+  playerScore += pts;
+  blockScore += pts;
+  saveScore();
+
+  const fb = document.getElementById('trivia-feedback');
+  fb.textContent = isCorrect ? 'Goed! +' + pts + ' punten \u{1F389}' : 'Helaas... +0 punten';
+  fb.style.color = isCorrect ? 'var(--green)' : 'var(--red)';
+
+  setTimeout(() => nextTriviaOrPhase(currentBlock, currentTriviaQ), 1800);
+}
+
+function handleRaceAnswer(payload) {
+  if (payload.playerId !== playerId && payload.correct) {
+    raceFirstAnswered = true;
+  }
+}
+
+function revealAnswer(correct) {
+  const btns = document.getElementById('answers-grid').querySelectorAll('.ans-btn');
+  if (btns[correct]) btns[correct].classList.add('reveal-correct');
+}
+
+function updateTriviaTimer(t, dur, isRace) {
+  const arc = document.getElementById('trivia-timer-arc');
+  const num = document.getElementById('trivia-timer-num');
+  if (!arc || !num) return;
+  num.textContent = t;
+  const pct = t / dur;
+  arc.style.strokeDashoffset = 150.8 * (1 - pct);
+  const color = pct > 0.5 ? '#22C55E' : pct > 0.25 ? '#F59E0B' : '#EF4444';
+  arc.style.stroke = color;
+}
+
+function nextTriviaOrPhase(block, qIdx) {
+  if (qIdx < 1) {
+    currentTriviaQ = 1;
+    startTrivia(block, 1);
+  } else {
+    phaseDone('trivia');
+  }
+}
+
+function spawnScoreFloat(text) {
+  const el = document.createElement('div');
+  el.className = 'score-float';
+  el.textContent = text;
+  el.style.left = (window.innerWidth / 2 - 30) + 'px';
+  el.style.top = (window.innerHeight / 2 - 40) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+// =============================================================
+// MATCH-3 GAME
+// =============================================================
+function startMatch3(block) {
+  showScreen('screen-match3');
+  matchScore = 0;
+  matchTime = CONFIG.MATCH3_DUUR;
+  matchSel = null;
+  matchAnimating = false;
+  matchDone = false;
+  matchCombo = '';
+  matchComboAlpha = 0;
+
+  document.getElementById('match-score-display').textContent = '0';
+  document.getElementById('combo-text').textContent = '';
+
+  initMatchBoard();
+
+  const canvas = document.getElementById('match-canvas');
+  canvas.addEventListener('click', onMatchClick);
+  canvas.addEventListener('touchend', onMatchTouch, { passive: false });
+
+  updateMatchTimer(CONFIG.MATCH3_DUUR);
+  matchIntervalId = setInterval(() => {
+    matchTime--;
+    updateMatchTimer(matchTime);
+    if (matchTime <= 0) {
+      clearInterval(matchIntervalId); matchIntervalId = null;
+      matchDone = true;
+      canvas.removeEventListener('click', onMatchClick);
+      canvas.removeEventListener('touchend', onMatchTouch);
+    }
+  }, 1000);
+
+  const ctx = canvas.getContext('2d');
+  function loop() {
+    if (!matchDone) matchRAF = requestAnimationFrame(loop);
+    ctx.clearRect(0, 0, 336, 336);
+    drawMatchBoard(ctx);
+    if (matchDone) {
+      blockScore += matchScore;
+      playerScore += matchScore;
+      saveScore();
+      phaseDone('match');
+    }
+  }
+  matchRAF = requestAnimationFrame(loop);
+}
+
+function initMatchBoard() {
+  let attempts = 0;
+  do {
+    matchBoard = [];
+    for (let r = 0; r < 6; r++) {
+      matchBoard[r] = [];
+      for (let c = 0; c < 6; c++) {
+        matchBoard[r][c] = Math.floor(Math.random() * 6);
+      }
+    }
+    attempts++;
+  } while (findMatchCells().length > 0 && attempts < 20);
+}
+
+function drawMatchBoard(ctx) {
+  ctx.fillStyle = '#0D0D2B';
+  ctx.fillRect(0, 0, 336, 336);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 6; i++) {
+    ctx.beginPath(); ctx.moveTo(i * 56, 0); ctx.lineTo(i * 56, 336); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i * 56); ctx.lineTo(336, i * 56); ctx.stroke();
+  }
+
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 6; c++) {
+      const t = matchBoard[r][c];
+      const x = c * 56, y = r * 56;
+      const isSelected = matchSel && matchSel.r === r && matchSel.c === c;
+
+      ctx.fillStyle = TCOLORS[t] + (isSelected ? 'AA' : '44');
+      roundRect(ctx, x + 3, y + 3, 50, 50, 10);
+      ctx.fill();
+
+      if (isSelected) {
+        ctx.strokeStyle = TCOLORS[t];
+        ctx.lineWidth = 2.5;
+        roundRect(ctx, x + 3, y + 3, 50, 50, 10);
+        ctx.stroke();
+      }
+
+      ctx.font = '28px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(TILES[t], x + 28, y + 28);
+    }
+  }
+
+  // Combo text
+  if (matchComboAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = matchComboAlpha;
+    ctx.font = '900 22px Nunito, sans-serif';
+    ctx.fillStyle = '#F1C40F';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(matchCombo, 168, 168);
+    ctx.restore();
+    matchComboAlpha = Math.max(0, matchComboAlpha - 0.03);
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function onMatchClick(e) {
+  if (matchAnimating || matchDone) return;
+  const rect = e.target.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const c = Math.floor(x / 56), r = Math.floor(y / 56);
+  handleMatchTap(r, c);
+}
+
+function onMatchTouch(e) {
+  e.preventDefault();
+  if (matchAnimating || matchDone) return;
+  const rect = e.target.getBoundingClientRect();
+  const t = e.changedTouches[0];
+  const x = t.clientX - rect.left, y = t.clientY - rect.top;
+  const c = Math.floor(x / 56), r = Math.floor(y / 56);
+  handleMatchTap(r, c);
+}
+
+function handleMatchTap(r, c) {
+  if (r < 0 || r >= 6 || c < 0 || c >= 6) return;
+  if (!matchSel) {
+    matchSel = { r, c };
+  } else {
+    const dr = Math.abs(r - matchSel.r), dc = Math.abs(c - matchSel.c);
+    if (dr + dc === 1) {
+      trySwap(matchSel.r, matchSel.c, r, c);
+      matchSel = null;
+    } else {
+      matchSel = { r, c };
+    }
+  }
+}
+
+function trySwap(r1, c1, r2, c2) {
+  swapCells(r1, c1, r2, c2);
+  const matches = findMatchCells();
+  if (matches.length === 0) {
+    swapCells(r1, c1, r2, c2); // revert
+  } else {
+    matchAnimating = true;
+    processMatches(matches);
+  }
+}
+
+function swapCells(r1, c1, r2, c2) {
+  const tmp = matchBoard[r1][c1];
+  matchBoard[r1][c1] = matchBoard[r2][c2];
+  matchBoard[r2][c2] = tmp;
+}
+
+function findMatchCells() {
+  const matched = new Set();
+  // Horizontal
+  for (let r = 0; r < 6; r++) {
+    let c = 0;
+    while (c < 6) {
+      let len = 1;
+      while (c + len < 6 && matchBoard[r][c + len] === matchBoard[r][c]) len++;
+      if (len >= 3) { for (let i = 0; i < len; i++) matched.add(r + ',' + (c + i)); }
+      c += len;
+    }
+  }
+  // Vertical
+  for (let c = 0; c < 6; c++) {
+    let r = 0;
+    while (r < 6) {
+      let len = 1;
+      while (r + len < 6 && matchBoard[r + len][c] === matchBoard[r][c]) len++;
+      if (len >= 3) { for (let i = 0; i < len; i++) matched.add((r + i) + ',' + c); }
+      r += len;
+    }
+  }
+  return [...matched].map(s => { const [r, c] = s.split(',').map(Number); return { r, c }; });
+}
+
+function processMatches(cells) {
+  // Calculate score
+  const groups = groupMatches(cells);
+  groups.forEach(g => {
+    const len = g.length;
+    let pts = len >= 5 ? CONFIG.MATCH3_VIJFPLUS : len === 4 ? CONFIG.MATCH3_VIER : CONFIG.MATCH3_DRIE;
+    matchScore += pts;
+    document.getElementById('match-score-display').textContent = matchScore;
+    if (len >= 5) { matchCombo = 'SUPER COMBO! \u{1F525}\u{1F525}'; matchComboAlpha = 1; }
+    else if (len === 4) { matchCombo = 'COMBO x4! \u{1F525}'; matchComboAlpha = 1; }
+    if (matchComboAlpha > 0) {
+      document.getElementById('combo-text').textContent = matchCombo;
+      setTimeout(() => { document.getElementById('combo-text').textContent = ''; }, 800);
+    }
+  });
+
+  // Remove matched cells
+  cells.forEach(({ r, c }) => { matchBoard[r][c] = -1; });
+
+  // Drop cells
+  dropCells();
+
+  // Refill
+  refillBoard();
+
+  // Chain check
+  setTimeout(() => {
+    const newMatches = findMatchCells();
+    if (newMatches.length > 0) {
+      processMatches(newMatches);
+    } else {
+      matchAnimating = false;
+      // Check if any moves possible
+      if (!hasAnyMove()) {
+        initMatchBoard();
+      }
+    }
+  }, 200);
+}
+
+function groupMatches(cells) {
+  // Simple: treat horizontal and vertical runs separately by position
+  // For scoring: just return all connected groups
+  // Simplified: return one group per connected component
+  const visited = new Set();
+  const groups = [];
+  cells.forEach(cell => {
+    const key = cell.r + ',' + cell.c;
+    if (!visited.has(key)) {
+      const group = [];
+      const q = [cell];
+      while (q.length) {
+        const cur = q.shift();
+        const k = cur.r + ',' + cur.c;
+        if (visited.has(k)) continue;
+        visited.add(k);
+        group.push(cur);
+        cells.forEach(n => {
+          const nk = n.r + ',' + n.c;
+          if (!visited.has(nk) && Math.abs(n.r - cur.r) + Math.abs(n.c - cur.c) === 1) q.push(n);
+        });
+      }
+      groups.push(group);
+    }
+  });
+  return groups;
+}
+
+function dropCells() {
+  for (let c = 0; c < 6; c++) {
+    let empty = [];
+    for (let r = 5; r >= 0; r--) {
+      if (matchBoard[r][c] === -1) empty.push(r);
+      else if (empty.length > 0) {
+        matchBoard[empty.shift()][c] = matchBoard[r][c];
+        matchBoard[r][c] = -1;
+        empty.push(r);
+      }
+    }
+  }
+}
+
+function refillBoard() {
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 6; c++) {
+      if (matchBoard[r][c] === -1) matchBoard[r][c] = Math.floor(Math.random() * 6);
+    }
+  }
+}
+
+function hasAnyMove() {
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 6; c++) {
+      if (c + 1 < 6) {
+        swapCells(r, c, r, c + 1);
+        const m = findMatchCells().length > 0;
+        swapCells(r, c, r, c + 1);
+        if (m) return true;
+      }
+      if (r + 1 < 6) {
+        swapCells(r, c, r + 1, c);
+        const m = findMatchCells().length > 0;
+        swapCells(r, c, r + 1, c);
+        if (m) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function updateMatchTimer(t) {
+  const arc = document.getElementById('match-timer-arc');
+  const num = document.getElementById('match-timer-num');
+  if (!arc || !num) return;
+  num.textContent = t;
+  arc.style.strokeDashoffset = 150.8 * (1 - t / CONFIG.MATCH3_DUUR);
+}
+
+// =============================================================
+// TUSSENSTAND (LEADERBOARD)
+// =============================================================
+async function showStand(block) {
+  showScreen('screen-stand');
+  document.getElementById('stand-block').textContent = 'Na blok ' + (block + 1);
+  await loadLeaderboard('stand-lb');
+
+  let t = CONFIG.TUSSENSTAND_DUUR;
+  document.getElementById('stand-next').textContent = 'Volgende blok start over ' + t + ' sec...';
+  const si = setInterval(() => {
+    t--;
+    const el = document.getElementById('stand-next');
+    if (el) el.textContent = 'Volgende blok start over ' + t + ' sec...';
+    if (t <= 0) {
+      clearInterval(si);
+      phaseDone('stand');
+    }
+  }, 1000);
+}
+
+async function loadLeaderboard(containerId) {
+  if (!roomId) return;
+  const { data } = await sb.from('players').select('*').eq('room_id', roomId).order('score', { ascending: false });
+  if (!data) return;
+
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  const newRanks = {};
+  data.forEach((p, i) => { newRanks[p.id] = i + 1; });
+
+  data.forEach((p, i) => {
+    const rank = i + 1;
+    const prev = prevRanks[p.id] || rank;
+    const diff = prev - rank;
+    const arrow = diff > 0 ? '<span style="color:var(--green);">&#8679;</span>' : diff < 0 ? '<span style="color:var(--red);">&#8681;</span>' : '<span style="color:var(--text2);">&#8741;</span>';
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (rank === 1 ? ' gold' : '') + (p.id === playerId ? ' self' : '');
+    row.innerHTML =
+      '<span class="lb-rank">' + (rank === 1 ? '\u{1F947}' : rank) + '</span>' +
+      '<span class="lb-avatar">' + p.avatar + '</span>' +
+      '<span class="lb-name">' + escHtml(p.name) + (p.id === playerId ? ' <span style="font-size:11px;color:var(--gold);">JIJ</span>' : '') + '</span>' +
+      '<span class="lb-score">' + p.score + '</span>' +
+      '<span class="lb-arrow">' + arrow + '</span>';
+    container.appendChild(row);
+  });
+
+  prevRanks = newRanks;
+}
+
+// =============================================================
+// END SCREENS
+// =============================================================
+function openPersonalMessage() {
+  const name = playerName;
+  const msg = MESSAGES[name];
+  const card = document.getElementById('msg-card');
+  const txt = document.getElementById('msg-text');
+  const btn = document.getElementById('open-msg-btn');
+  const nameEl = document.getElementById('end2-name');
+  if (nameEl) nameEl.textContent = 'Voor ' + name;
+  if (msg) {
+    txt.textContent = msg;
+    card.classList.add('show');
+    if (btn) btn.style.display = 'none';
+  } else {
+    // Fallback
+    document.getElementById('fallback-text').textContent = FALLBACK_BERICHT;
+    showScreen('screen-fallback');
+  }
+}
+
+// =============================================================
+// HOST PANEL
+// =============================================================
+function showHostLogin() {
+  document.getElementById('host-login').classList.add('active');
+  setTimeout(() => document.getElementById('host-pw').focus(), 100);
+}
+function closeHostLogin() {
+  document.getElementById('host-login').classList.remove('active');
+  document.getElementById('host-pw').value = '';
+}
+function closeHostPanel() {
+  document.getElementById('host-dashboard').classList.remove('active');
+  document.getElementById('host-qm').classList.remove('active');
+}
+function closeConfirm() {
+  document.getElementById('host-confirm').classList.remove('active');
+}
+
+async function doHostLogin() {
+  const pw = document.getElementById('host-pw').value;
+  if (pw !== CONFIG.HOST_WACHTWOORD) { showToast('Verkeerd wachtwoord!'); return; }
+  isHost = true;
+  closeHostLogin();
+
+  // Ensure room exists
+  if (!roomId) {
+    const { data: existing } = await sb.from('rooms').select('*').eq('code', CONFIG.SPELCODE).limit(1);
+    if (existing && existing.length > 0) {
+      roomId = existing[0].id;
+      currentBlock = existing[0].current_block || 0;
+      currentPhase = existing[0].current_phase || 'runner';
+    } else {
+      const { data: newRoom } = await sb.from('rooms').insert({ code: CONFIG.SPELCODE }).select().single();
+      if (newRoom) roomId = newRoom.id;
+    }
+    subscribeToRoom();
+  }
+
+  // Show dashboard or QM based on game status
+  const { data: room } = await sb.from('rooms').select('*').eq('id', roomId).single();
+  if (room && room.status === 'playing') {
+    updateQMStatus();
+    document.getElementById('host-qm').classList.add('active');
+  } else {
+    await updateLobby();
+    document.getElementById('host-dashboard').classList.add('active');
+  }
+}
+
+async function hostStartGame() {
+  if (!roomId) return;
+  document.getElementById('host-dashboard').classList.remove('active');
+  await sb.from('rooms').update({ status: 'playing', current_block: 0, current_phase: 'runner', started_at: new Date().toISOString() }).eq('id', roomId);
+  currentBlock = 0; currentPhase = 'runner';
+  playIntro();
+  setTimeout(() => {
+    updateQMStatus();
+    document.getElementById('host-qm').classList.add('active');
+  }, 8000);
+}
+
+function updateQMStatus() {
+  const phaseNames = { runner: 'Runner', trivia: 'Trivia', match: 'Match-3', stand: 'Tussenstand' };
+  const el = document.getElementById('host-qm-status');
+  if (el) el.textContent = 'Blok ' + (currentBlock + 1) + ' - ' + (phaseNames[currentPhase] || currentPhase);
+}
+
+let confirmPendingAction = null;
+function confirmAction(action) {
+  confirmPendingAction = action;
+  const title = document.getElementById('confirm-title');
+  const msg = document.getElementById('confirm-msg');
+  const okBtn = document.getElementById('confirm-ok-btn');
+  if (action === 'skip') {
+    title.textContent = 'Ronde overslaan?';
+    msg.textContent = 'De huidige fase wordt overgeslagen en iedereen gaat naar de volgende.';
+  } else {
+    title.textContent = 'Spel finaliseren?';
+    msg.textContent = 'Het spel eindigt direct en het eindscherm wordt getoond.';
+    okBtn.className = 'btn btn-danger';
+  }
+  document.getElementById('host-confirm').classList.add('active');
+  okBtn.onclick = executeConfirm;
+}
+
+async function executeConfirm() {
+  closeConfirm();
+  if (confirmPendingAction === 'skip') {
+    await advancePhase();
+    updateQMStatus();
+  } else if (confirmPendingAction === 'finish') {
+    await sb.from('rooms').update({ status: 'victory', finished_at: new Date().toISOString() }).eq('id', roomId);
+    document.getElementById('host-qm').classList.remove('active');
+    stopAllGames();
+    loadLeaderboard('end-lb');
+    showScreen('screen-end1');
+  }
+}
+
+// =============================================================
+// UTILS
+// =============================================================
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  if (syncChannel) sb.removeChannel(syncChannel);
+  stopAllGames();
+});
+</script>
+</body>
+</html>
