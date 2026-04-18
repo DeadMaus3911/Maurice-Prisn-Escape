@@ -567,7 +567,10 @@ async function doJoin() {
   try {
     // Find room
     const { data: rooms, error: re } = await sb.from('rooms').select('*').eq('code', CONFIG.SPELCODE).limit(1);
-    if (re || !rooms || rooms.length === 0) {
+    if (re) {
+      showToast('Verbindingsfout: ' + re.message); btn.disabled = false; btn.textContent = 'Doe mee! \u{1F680}'; return;
+    }
+    if (!rooms || rooms.length === 0) {
       showToast('Spelcode niet gevonden!'); btn.disabled = false; btn.textContent = 'Doe mee! \u{1F680}'; return;
     }
     const room = rooms[0];
