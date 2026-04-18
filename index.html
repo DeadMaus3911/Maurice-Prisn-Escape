@@ -154,6 +154,42 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
 @keyframes tropBounce{from{transform:scale(1)}to{transform:scale(1.08)}}
 @keyframes comboFlash{0%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(1)}}
 @keyframes countdown{0%{transform:scale(1.2);opacity:1}80%{opacity:1}100%{opacity:0;transform:scale(.8)}}
+
+/* ---- SCREEN TRANSITIONS ---- */
+section.active{animation:screenIn .28s cubic-bezier(.22,1,.36,1) both;}
+@keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ---- BLOCK PROGRESS DOTS ---- */
+.block-progress{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.bp-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .3s,transform .2s;}
+.bp-dot.done{background:var(--gold);}
+.bp-dot.current{background:var(--gold);transform:scale(1.35);box-shadow:0 0 6px var(--gold);}
+
+/* ---- BLOCK TITLE CARD ---- */
+#block-title-card{display:none;position:fixed;inset:0;background:var(--bg);z-index:850;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+#block-title-card.active{display:flex;animation:screenIn .3s ease-out;}
+.block-title-num{font-family:'Syne',sans-serif;font-weight:800;font-size:72px;color:var(--gold);line-height:1;}
+.block-title-label{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;letter-spacing:4px;text-transform:uppercase;color:var(--text2);}
+
+/* ---- CONFETTI ---- */
+#confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:940;}
+
+/* ---- RUNNER DONE OVERLAY ---- */
+#runner-done-overlay{display:none;position:absolute;inset:0;background:rgba(13,13,43,.82);border-radius:16px;flex-direction:column;align-items:center;justify-content:center;gap:8px;animation:screenIn .25s ease-out;}
+#runner-done-overlay.active{display:flex;}
+.runner-done-score{font-family:'Syne',sans-serif;font-weight:800;font-size:52px;color:var(--gold);}
+.runner-done-label{font-size:14px;color:var(--text2);font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+
+/* ---- MSG CARD IMPROVED ---- */
+.msg-card-inner{padding:28px;border-radius:24px;background:linear-gradient(145deg,rgba(241,196,15,.18),rgba(139,92,246,.1));border:1.5px solid var(--gold);width:100%;max-width:340px;}
+.msg-card-inner .msg-author{font-size:13px;color:var(--gold);font-weight:800;letter-spacing:1px;margin-bottom:12px;}
+.msg-card-inner .msg-text{font-size:16px;font-weight:600;line-height:1.8;color:var(--text);}
+@keyframes heartPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+.heart-icon{font-size:40px;animation:heartPulse 1.5s ease-in-out infinite;}
+
+/* ---- WAITING OVERLAY IMPROVED ---- */
+.waiting-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -209,6 +245,7 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
 
 <!-- ===================== S-03: RUNNER ===================== -->
 <section id="screen-runner">
+  <div class="block-progress" id="runner-bp"></div>
   <div class="runner-header">
     <span class="badge badge-runner">&#127939; Runner</span>
     <span class="runner-score" id="runner-score-display">0</span>
@@ -227,6 +264,11 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
       <div style="font-size:22px;">&#128021; Ontwijkt obstakels &nbsp;&#8594;&nbsp; <span style="color:var(--red);">-punten</span></div>
       <div style="font-size:13px;color:var(--text2);margin-top:8px;font-weight:600;">Swipe of gebruik de pijltjes</div>
     </div>
+    <div id="runner-done-overlay">
+      <div style="font-size:32px;">&#127939;</div>
+      <div class="runner-done-score" id="runner-done-score">0</div>
+      <div class="runner-done-label">punten verdiend!</div>
+    </div>
   </div>
   <div class="runner-controls">
     <button class="btn btn-secondary" id="runner-left" ontouchstart="runnerMove(-1)" onmousedown="runnerMove(-1)">&#8592;</button>
@@ -236,6 +278,7 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
 
 <!-- ===================== S-04: TRIVIA ===================== -->
 <section id="screen-trivia">
+  <div class="block-progress" id="trivia-bp"></div>
   <div class="trivia-header">
     <span class="badge" id="trivia-badge">SOLO</span>
     <span style="font-size:13px;color:var(--text2);font-weight:700;" id="trivia-progress">Vraag 1/2</span>
@@ -254,6 +297,7 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
 
 <!-- ===================== S-05: MATCH-3 ===================== -->
 <section id="screen-match3">
+  <div class="block-progress" id="match-bp"></div>
   <div class="match-header">
     <span class="badge badge-match">&#127851; Match-3</span>
     <span class="match-score" id="match-score-display">0</span>
@@ -271,6 +315,7 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
 
 <!-- ===================== S-06: TUSSENSTAND ===================== -->
 <section id="screen-stand">
+  <div class="block-progress" id="stand-bp"></div>
   <h2 style="margin-bottom:4px;font-size:22px;">Tussenstand</h2>
   <p style="font-size:13px;color:var(--text2);font-weight:600;" id="stand-block">Na blok 1</p>
   <div id="stand-lb" style="width:100%;max-width:340px;margin-top:8px;"></div>
@@ -281,21 +326,23 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
 <section id="screen-end1">
   <div class="trophy">&#127942;</div>
   <div class="end-title">ONTSNAPPING GESLAAGD!</div>
-  <p style="font-size:14px;color:var(--text2);font-weight:600;">Eindstand</p>
+  <p style="font-size:13px;color:var(--text2);font-weight:600;margin-top:4px;">Gefeliciteerd aan iedereen!</p>
+  <p style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:4px;">Eindstand</p>
   <div id="end-lb" style="width:100%;max-width:340px;"></div>
-  <button class="btn btn-primary" style="margin-top:16px;" onclick="showScreen('screen-end2')">Jouw persoonlijk bericht &#128140;</button>
+  <button class="btn btn-primary" style="margin-top:16px;" onclick="showScreen('screen-end2')">&#128140; Jouw persoonlijk bericht</button>
 </section>
 
 <!-- ===================== S-12: EINDSCHERM 2 ===================== -->
-<section id="screen-end2">
-  <div style="font-size:48px;margin-bottom:8px;">&#128140;</div>
-  <h2 style="font-size:22px;margin-bottom:4px;">Een bericht van Maurice</h2>
-  <p style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:16px;" id="end2-name"></p>
-  <div class="msg-card" id="msg-card">
+<section id="screen-end2" style="justify-content:center;gap:16px;text-align:center;">
+  <div class="heart-icon">&#128150;</div>
+  <h2 style="font-size:24px;margin-bottom:0;">Een bericht van Maurice</h2>
+  <p style="font-size:13px;color:var(--text2);font-weight:600;" id="end2-name"></p>
+  <div class="msg-card-inner" id="msg-card" style="display:none;text-align:left;">
+    <div class="msg-author">Van Maurice &#128150;</div>
     <p class="msg-text" id="msg-text"></p>
   </div>
-  <button class="btn btn-primary" id="open-msg-btn" onclick="openPersonalMessage()" style="max-width:340px;">Open je persoonlijk bericht &#128140;</button>
-  <button class="btn btn-secondary" style="margin-top:10px;" onclick="showScreen('screen-end1')">&#8592; Terug naar eindstand</button>
+  <button class="btn btn-primary" id="open-msg-btn" onclick="openPersonalMessage()" style="max-width:340px;">&#128140; Open je persoonlijk bericht</button>
+  <button class="btn btn-secondary" style="margin-top:4px;" onclick="showScreen('screen-end1')">&#8592; Terug naar eindstand</button>
 </section>
 
 <!-- ===================== S-13: FALLBACK ===================== -->
@@ -354,9 +401,19 @@ label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;align-
 
 <!-- ===================== WAITING OVERLAY ===================== -->
 <div id="waiting-overlay">
-  <div style="font-size:36px;">&#9203;</div>
+  <div class="waiting-spinner"></div>
   <p style="font-weight:700;font-size:16px;" id="waiting-text">Wachten op volgende fase...</p>
 </div>
+
+<!-- ===================== BLOCK TITLE CARD ===================== -->
+<div id="block-title-card">
+  <div class="block-title-label">Blok</div>
+  <div class="block-title-num" id="block-title-num">1</div>
+  <div class="block-progress" id="btc-bp" style="margin-top:8px;"></div>
+</div>
+
+<!-- ===================== CONFETTI ===================== -->
+<canvas id="confetti-canvas"></canvas>
 
 <!-- ===================== HOST FAB ===================== -->
 <button id="host-fab" onclick="openHostQM()" style="display:none;position:fixed;bottom:80px;right:16px;width:48px;height:48px;border-radius:50%;background:var(--purple);border:none;font-size:20px;color:#fff;z-index:700;box-shadow:0 4px 16px rgba(139,92,246,.5);cursor:pointer;">&#127918;</button>
@@ -463,6 +520,7 @@ let runnerObjs = [];
 let runnerStars = [];
 let runnerFrame = 0;
 let runnerDone = false;
+let runnerPhaseFired = false;
 let runnerTouchX = null;
 let runnerFloats = [];
 let runnerFlash = { alpha: 0, color: '#22C55E' };
@@ -493,6 +551,119 @@ let prevRanks = {};
 let hostPressTimer = null;
 
 // =============================================================
+// SOUND ENGINE (Web Audio API)
+// =============================================================
+let _audioCtx = null;
+function _ac() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+function _tone(freq, type, dur, vol=0.15, delay=0) {
+  try {
+    const ctx = _ac();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = type; o.frequency.value = freq;
+    const t0 = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0.001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.start(t0); o.stop(t0 + dur + 0.01);
+  } catch(e) {}
+}
+function sndStar()    { _tone(880,'sine',.12,.18); _tone(1100,'sine',.12,.12,.07); }
+function sndObstacle(){ _tone(180,'sawtooth',.22,.2); _tone(130,'sawtooth',.18,.12,.05); }
+function sndCorrect() { _tone(660,'sine',.1,.15); _tone(880,'sine',.15,.1,.09); _tone(1100,'sine',.2,.08,.18); }
+function sndWrong()   { _tone(200,'sawtooth',.28,.18); _tone(150,'sawtooth',.22,.12,.08); }
+function sndCombo()   { [523,659,784,1047].forEach((f,i)=>_tone(f,'triangle',.2,.18,i*.08)); }
+function sndCountdown(){ _tone(440,'sine',.12,.12); }
+function sndFanfare() { [523,659,784,1047,1319].forEach((f,i)=>_tone(f,'triangle',.25,.2,i*.1)); }
+function sndStart()   { _tone(784,'triangle',.2,.25); _tone(1047,'triangle',.3,.3,.1); }
+function sndSwipe()   { _tone(330,'sine',.06,.08); }
+function sndTap()     { _tone(700,'sine',.05,.07); }
+
+// Mobile vibration
+function vib(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e){} }
+
+// =============================================================
+// BLOCK PROGRESS DOTS
+// =============================================================
+function renderProgressDots(containerId, currentBlock) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  for (let i = 0; i < CONFIG.AANTAL_BLOKKEN; i++) {
+    const d = document.createElement('div');
+    d.className = 'bp-dot' + (i < currentBlock ? ' done' : i === currentBlock ? ' current' : '');
+    el.appendChild(d);
+  }
+}
+
+// =============================================================
+// CONFETTI
+// =============================================================
+let _confettiRAF = null;
+function startConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const COLORS = ['#F1C40F','#8B5CF6','#22C55E','#EF4444','#3B82F6','#F59E0B','#EC4899'];
+  const pieces = Array.from({length: 90}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * -canvas.height * 0.5,
+    w: 7 + Math.random() * 9,
+    h: 4 + Math.random() * 6,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    rot: Math.random() * Math.PI * 2,
+    vx: (Math.random() - .5) * 2.5,
+    vy: 1.5 + Math.random() * 3.5,
+    vr: (Math.random() - .5) * .18,
+  }));
+  if (_confettiRAF) cancelAnimationFrame(_confettiRAF);
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+      ctx.save();
+      ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = 0.9;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+    _confettiRAF = requestAnimationFrame(draw);
+  }
+  draw();
+  setTimeout(() => {
+    if (_confettiRAF) { cancelAnimationFrame(_confettiRAF); _confettiRAF = null; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }, 9000);
+}
+
+// =============================================================
+// BLOCK TITLE CARD
+// =============================================================
+function showBlockTitleCard(blockNum, onDone) {
+  const card = document.getElementById('block-title-card');
+  const numEl = document.getElementById('block-title-num');
+  if (!card || !numEl) { onDone(); return; }
+  numEl.textContent = blockNum;
+  renderProgressDots('btc-bp', blockNum - 1);
+  card.classList.add('active');
+  sndCountdown();
+  setTimeout(() => {
+    card.classList.remove('active');
+    setTimeout(onDone, 100);
+  }, 1200);
+}
+
+// =============================================================
 // INIT
 // =============================================================
 window.addEventListener('load', async () => {
@@ -502,6 +673,9 @@ window.addEventListener('load', async () => {
   const code = params.get('code') || '';
   if (code) document.getElementById('join-code').value = code.toUpperCase();
   setupKeyboard();
+  // Unlock audio on first user gesture
+  document.addEventListener('touchstart', () => { try { _ac(); } catch(e){} }, { once: true });
+  document.addEventListener('click', () => { try { _ac(); } catch(e){} }, { once: true });
   showScreen('screen-join');
 });
 
@@ -571,7 +745,8 @@ function showToast(msg) {
 async function doJoin() {
   const nameInput = document.getElementById('join-name');
   const name = nameInput.value.trim();
-  if (!name) { showToast('Vul je naam in! \u{1F64F}'); return; }
+  if (!name) { showToast('Vul je naam in! \u{1F64F}'); sndWrong(); return; }
+  sndStart();
 
   const btn = document.getElementById('join-btn');
   btn.disabled = true; btn.textContent = 'Even wachten...';
@@ -650,6 +825,8 @@ function handleRoomUpdate(room) {
     stopAllGames();
     loadLeaderboard('end-lb');
     showScreen('screen-end1');
+    startConfetti();
+    sndFanfare();
     return;
   }
   if (room.status === 'playing') {
@@ -739,13 +916,16 @@ function playIntro() {
     countEl.style.display = 'flex';
     let n = 3;
     numEl.textContent = n;
+    sndCountdown();
     const ci = setInterval(() => {
       n--;
       if (n <= 0) {
         clearInterval(ci);
+        sndStart();
         startPhase(0, 'runner');
       } else {
         numEl.textContent = n;
+        sndCountdown();
       }
     }, 1000);
   }, 2500);
@@ -799,6 +979,7 @@ async function advancePhase() {
       stopAllGames();
       loadLeaderboard('end-lb');
       showScreen('screen-end1');
+      startConfetti(); sndFanfare();
       return;
     }
     nextPhase = 'runner';
@@ -814,11 +995,21 @@ async function advancePhase() {
 // RUNNER GAME
 // =============================================================
 function startRunner(block) {
+  // Show block title card only at start of each block (runner is first phase)
+  showBlockTitleCard(block + 1, () => _startRunnerCore(block));
+}
+
+function _startRunnerCore(block) {
   showScreen('screen-runner');
+  renderProgressDots('runner-bp', block);
 
   // Show instruction overlay, fade after 2.5s
   const instr = document.getElementById('runner-instruction');
   if (instr) { instr.style.opacity = '1'; setTimeout(() => { instr.style.opacity = '0'; }, 2500); }
+
+  // Hide done overlay
+  const doneOvl = document.getElementById('runner-done-overlay');
+  if (doneOvl) doneOvl.classList.remove('active');
 
   runnerScore = 0;
   runnerTime = CONFIG.RUNNER_DUUR;
@@ -827,6 +1018,7 @@ function startRunner(block) {
   runnerStars = [];
   runnerFrame = 0;
   runnerDone = false;
+  runnerPhaseFired = false;
   runnerFloats = [];
   runnerFlash = { alpha: 0, color: '#22C55E' };
 
@@ -853,6 +1045,7 @@ function startRunner(block) {
   runnerIntervalId = setInterval(() => {
     runnerTime--;
     updateRunnerTimer(runnerTime);
+    if (runnerTime > 0 && runnerTime <= 5) sndCountdown();
     if (runnerTime <= 0) { clearInterval(runnerIntervalId); runnerIntervalId = null; runnerDone = true; }
   }, 1000);
 
@@ -892,6 +1085,7 @@ function startRunner(block) {
           runnerFloats.push({ x: LANE_X[runnerLane], y: PLAY_Y - 30, txt: String(o.pts), alpha: 1, col: '#EF4444' });
           runnerFlash = { alpha: 0.45, color: '#EF4444' };
           document.getElementById('runner-score-display').textContent = runnerScore;
+          sndObstacle(); vib(60);
         }
         return false;
       }
@@ -916,6 +1110,7 @@ function startRunner(block) {
           runnerFloats.push({ x: LANE_X[runnerLane], y: PLAY_Y - 30, txt: '+' + CONFIG.STER_PUNTEN, alpha: 1, col: '#F1C40F' });
           runnerFlash = { alpha: 0.35, color: '#F1C40F' };
           document.getElementById('runner-score-display').textContent = runnerScore;
+          sndStar(); vib(20);
         }
         return false;
       }
@@ -962,12 +1157,21 @@ function startRunner(block) {
 
     document.getElementById('runner-score-display').textContent = runnerScore;
 
-    if (runnerDone) {
+    if (runnerDone && !runnerPhaseFired) {
+      runnerPhaseFired = true;
       blockScore += runnerScore;
       playerScore += runnerScore;
       canvas.removeEventListener('touchstart', onRunnerTouchStart);
       canvas.removeEventListener('touchend', onRunnerTouchEnd);
-      phaseDone('runner');
+      // Show done overlay briefly before transitioning
+      const doneOvl = document.getElementById('runner-done-overlay');
+      const doneScore = document.getElementById('runner-done-score');
+      if (doneOvl && doneScore) {
+        doneScore.textContent = runnerScore;
+        doneOvl.classList.add('active');
+      }
+      sndFanfare();
+      setTimeout(() => phaseDone('runner'), 1600);
     }
   }
   runnerRAF = requestAnimationFrame(loop);
@@ -1245,7 +1449,9 @@ function onRunnerTouchEnd(e) {
   runnerTouchX = null;
 }
 function runnerMove(dir) {
+  const prev = runnerLane;
   runnerLane = Math.max(0, Math.min(2, runnerLane + dir));
+  if (runnerLane !== prev) sndSwipe();
 }
 
 function updateRunnerTimer(t) {
@@ -1262,6 +1468,7 @@ function updateRunnerTimer(t) {
 // =============================================================
 function startTrivia(block, qIdx) {
   showScreen('screen-trivia');
+  renderProgressDots('trivia-bp', block);
   triviaAnswered = false;
   triviaQScore = 0;
   raceFirstAnswered = false;
@@ -1301,6 +1508,7 @@ function startTrivia(block, qIdx) {
   triviaIntervalId = setInterval(() => {
     triviaTimeLeft--;
     updateTriviaTimer(triviaTimeLeft, dur, isRace);
+    if (triviaTimeLeft > 0 && triviaTimeLeft <= 3) sndCountdown();
     if (triviaTimeLeft <= 0) {
       clearInterval(triviaIntervalId); triviaIntervalId = null;
       if (!triviaAnswered) {
@@ -1324,6 +1532,7 @@ function submitTriviaAnswer(idx, correct, isRace, dur) {
 
   const isCorrect = idx === correct;
   btns[idx].classList.add(isCorrect ? 'correct' : 'wrong');
+  if (isCorrect) { sndCorrect(); vib([30,30,60]); } else { sndWrong(); vib(120); }
 
   let pts = 0;
   if (isCorrect) {
@@ -1401,6 +1610,7 @@ function spawnScoreFloat(text) {
 // =============================================================
 function startMatch3(block) {
   showScreen('screen-match3');
+  renderProgressDots('match-bp', block);
   matchScore = 0;
   matchTime = CONFIG.MATCH3_DUUR;
   matchSel = null;
@@ -1422,6 +1632,7 @@ function startMatch3(block) {
   matchIntervalId = setInterval(() => {
     matchTime--;
     updateMatchTimer(matchTime);
+    if (matchTime > 0 && matchTime <= 5) sndCountdown();
     if (matchTime <= 0) {
       clearInterval(matchIntervalId); matchIntervalId = null;
       matchDone = true;
@@ -1631,6 +1842,7 @@ function onMatchTouch(e) {
 
 function handleMatchTap(r, c) {
   if (r < 0 || r >= 6 || c < 0 || c >= 6) return;
+  sndTap();
   if (!matchSel) {
     matchSel = { r, c };
   } else {
@@ -1782,8 +1994,9 @@ function processMatches(cells) {
     let pts = len >= 5 ? CONFIG.MATCH3_VIJFPLUS : len === 4 ? CONFIG.MATCH3_VIER : CONFIG.MATCH3_DRIE;
     matchScore += pts;
     document.getElementById('match-score-display').textContent = matchScore;
-    if (len >= 5) { matchCombo = 'SUPER COMBO! \u{1F525}\u{1F525}'; matchComboAlpha = 1; }
-    else if (len === 4) { matchCombo = 'COMBO x4! \u{1F525}'; matchComboAlpha = 1; }
+    if (len >= 5) { matchCombo = 'SUPER COMBO! \u{1F525}\u{1F525}'; matchComboAlpha = 1; sndCombo(); vib([30,20,60]); }
+    else if (len === 4) { matchCombo = 'COMBO x4! \u{1F525}'; matchComboAlpha = 1; sndCombo(); vib(40); }
+    else { _tone(440,'sine',.08,.1); }
     if (matchComboAlpha > 0) {
       document.getElementById('combo-text').textContent = matchCombo;
       setTimeout(() => { document.getElementById('combo-text').textContent = ''; }, 800);
@@ -1949,6 +2162,9 @@ function updateMatchTimer(t) {
 async function showStand(block) {
   showScreen('screen-stand');
   document.getElementById('stand-block').textContent = 'Na blok ' + (block + 1);
+  // Render progress dots in stand screen if container exists
+  const standBp = document.getElementById('stand-bp');
+  if (standBp) renderProgressDots('stand-bp', block + 1);
   await loadLeaderboard('stand-lb');
 
   let t = CONFIG.TUSSENSTAND_DUUR;
@@ -2008,8 +2224,9 @@ function openPersonalMessage() {
   if (nameEl) nameEl.textContent = 'Voor ' + name;
   if (msg) {
     txt.textContent = msg;
-    card.classList.add('show');
+    card.style.display = 'block';
     if (btn) btn.style.display = 'none';
+    sndFanfare(); vib([40,30,40,30,80]);
   } else {
     // Fallback
     document.getElementById('fallback-text').textContent = FALLBACK_BERICHT;
@@ -2127,6 +2344,7 @@ async function executeConfirm() {
     stopAllGames();
     loadLeaderboard('end-lb');
     showScreen('screen-end1');
+    startConfetti(); sndFanfare();
   }
 }
 
