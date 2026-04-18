@@ -76,11 +76,11 @@ Netlify: **Add new site → Import from GitHub → selecteer repo**
 - Build command: *(leeg)*
 - Publish directory: *(leeg)*
 
-Stel domeinnaam in: `mauriceprisnescape` → live op `https://mauriceprisnescape.netlify.app`
+Stel domeinnaam in: `mauriceprisnescape` → live op `https://deadmaus3911.github.io/Maurice-Prisn-Escape`
 
 ### 5. QR-code
 
-Maak een QR-code voor: `https://mauriceprisnescape.netlify.app/?code=MAUS`
+Maak een QR-code voor: `https://deadmaus3911.github.io/Maurice-Prisn-Escape/?code=MAUS`
 
 ## Speluitleg
 

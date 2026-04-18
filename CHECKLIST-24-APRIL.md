@@ -12,14 +12,14 @@ DELETE FROM players WHERE room_id IN (SELECT id FROM rooms WHERE code='MAUS');
 - [ ] Of vraag Claude Code om het te doen ("reset de MAUS room")
 
 ### Netlify / game
-- [ ] Open https://mauriceprisnescape.netlify.app/?code=MAUS op je eigen telefoon
+- [ ] Open https://deadmaus3911.github.io/Maurice-Prisn-Escape/?code=MAUS op je eigen telefoon
 - [ ] Vul een testnaam in, klik Doe mee → lobby laadt ✓
 - [ ] Druk 1,5 sec op het logo → wachtwoord `afscheid2026` → host-dashboard laadt ✓
 - [ ] Reset daarna de room opnieuw (zie boven)
 
 ### QR-code
 - [ ] Maak QR-code via qr-code-generator.com voor:
-  `https://mauriceprisnescape.netlify.app/?code=MAUS`
+  `https://deadmaus3911.github.io/Maurice-Prisn-Escape/?code=MAUS`
 - [ ] Print op A4 of toon op laptop/scherm
 - [ ] Test QR op een andere telefoon
 

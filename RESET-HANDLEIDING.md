@@ -43,7 +43,7 @@ Open `index.html` → zoek op `const MESSAGES` → pas namen/teksten aan → sla
 Naam in MESSAGES moet EXACT overeenkomen met de naam die de speler invult bij "Doe mee".
 
 ## URL's
-- **Spel**: https://mauriceprisnescape.netlify.app/?code=MAUS
+- **Spel**: https://deadmaus3911.github.io/Maurice-Prisn-Escape/?code=MAUS
 - **Netlify dashboard**: https://app.netlify.com/projects/mauriceprisnescape
 - **GitHub repo**: https://github.com/DeadMaus3911/Maurice-Prisn-Escape
 - **Supabase**: https://supabase.com/dashboard/project/hxouixcbspmqcizoavdr
